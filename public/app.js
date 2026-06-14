@@ -5,6 +5,8 @@ if (!CLIENT_ID) {
 }
 const cq = (extra = '') => `clientId=${encodeURIComponent(CLIENT_ID)}${extra}`;
 
+document.getElementById('overviewLink').href = `/overview.html?clientId=${encodeURIComponent(CLIENT_ID)}`;
+
 const levelColors = {
   Campaign: 'bg-indigo-600',
   'Ad Group': 'bg-sky-600',

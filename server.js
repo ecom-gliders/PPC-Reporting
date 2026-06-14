@@ -437,6 +437,54 @@ app.get('/api/stats', requireClientAccess, (req, res) => {
   res.json({ totalChanges: changes.length, totalDates: dates.length, totalAsins: asins.length });
 });
 
+app.get('/api/analytics', requireClientAccess, (req, res) => {
+  const { from, to } = req.query;
+  let changes = db.getChanges().filter((c) => c.clientId === req.clientId);
+  if (from) changes = changes.filter((c) => c.date >= from);
+  if (to) changes = changes.filter((c) => c.date <= to);
+
+  // Activity over time (changes per date)
+  const byDate = {};
+  for (const c of changes) byDate[c.date] = (byDate[c.date] || 0) + 1;
+  const activityOverTime = Object.entries(byDate).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, count]) => ({ date, count }));
+
+  // Action type breakdown
+  const byAction = {};
+  for (const c of changes) byAction[c.action] = (byAction[c.action] || 0) + 1;
+  const actionBreakdown = Object.entries(byAction).map(([action, count]) => ({ action, count }));
+
+  // Bid increases vs decreases
+  let bidIncreases = 0;
+  let bidDecreases = 0;
+  for (const c of changes) {
+    if (!c.action.toLowerCase().includes('bid')) continue;
+    const from = parseFloat(String(c.from).replace(/[^0-9.-]/g, ''));
+    const to = parseFloat(String(c.to).replace(/[^0-9.-]/g, ''));
+    if (Number.isNaN(from) || Number.isNaN(to)) continue;
+    if (to > from) bidIncreases++;
+    else if (to < from) bidDecreases++;
+  }
+
+  // Top ASINs by activity
+  const byAsin = {};
+  for (const c of changes) byAsin[c.asin] = (byAsin[c.asin] || 0) + 1;
+  const topAsins = Object.entries(byAsin)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([asin, count]) => ({ asin, count }));
+
+  // Campaigns paused over time
+  const byPauseDate = {};
+  for (const c of changes) {
+    if (c.action === 'Campaign Status' && String(c.to).toLowerCase() === 'paused') {
+      byPauseDate[c.date] = (byPauseDate[c.date] || 0) + 1;
+    }
+  }
+  const campaignsPaused = Object.entries(byPauseDate).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, count]) => ({ date, count }));
+
+  res.json({ activityOverTime, actionBreakdown, bidIncreases, bidDecreases, topAsins, campaignsPaused });
+});
+
 // ================= SUMMARIES (per client) =================
 app.get('/api/summaries', requireClientAccess, (req, res) => {
   const summaries = db.getSummaries().filter((s) => s.clientId === req.clientId);
