@@ -79,7 +79,7 @@ async function loadClients() {
 
   // client logins always belong to exactly one client - skip the picker entirely
   if (currentUser && currentUser.role === 'client' && clients.length === 1) {
-    window.location.href = `/overview.html?clientId=${clients[0].id}`;
+    window.location.href = `/dashboard.html?clientId=${clients[0].id}`;
     return;
   }
 
@@ -97,7 +97,7 @@ async function loadClients() {
       const [grad, soft, text] = colors[i % colors.length];
       const initials = c.name.trim().slice(0, 2).toUpperCase();
       return `
-      <a href="/overview.html?clientId=${c.id}" class="client-card fade-in bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-5 flex flex-col gap-4">
+      <a href="/dashboard.html?clientId=${c.id}" class="client-card fade-in bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-5 flex flex-col gap-4">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-extrabold text-lg shadow-md">${escapeHtml(initials)}</div>
           <div>

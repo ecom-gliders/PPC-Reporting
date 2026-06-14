@@ -206,8 +206,8 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
   }
 });
 
-function wirePasswordToggles() {
-  document.querySelectorAll('.pw-toggle-btn').forEach((btn) =>
+function wirePasswordToggles(container) {
+  container.querySelectorAll('.pw-toggle-btn').forEach((btn) =>
     btn.addEventListener('click', () => {
       const span = btn.previousElementSibling;
       const open = btn.querySelector('.eye-open');
@@ -268,7 +268,7 @@ async function loadClients() {
   document.querySelectorAll('.reset-client-btn').forEach((btn) =>
     btn.addEventListener('click', () => resetClientPassword(btn.dataset.id, btn.dataset.name))
   );
-  wirePasswordToggles();
+  wirePasswordToggles(document.getElementById('clientTableBody'));
 
   // populate the "new user" client checkboxes
   const box = document.getElementById('newUserClients');
@@ -419,7 +419,7 @@ async function loadUsers() {
   document.querySelectorAll('.toggle-user-btn').forEach((btn) =>
     btn.addEventListener('click', () => toggleUserEnabled(btn.dataset.id, btn.dataset.name, btn.dataset.enabled === 'true'))
   );
-  wirePasswordToggles();
+  wirePasswordToggles(document.getElementById('userTableBody'));
 
   document.querySelectorAll('.manage-access-btn').forEach((btn) =>
     btn.addEventListener('click', () => {
