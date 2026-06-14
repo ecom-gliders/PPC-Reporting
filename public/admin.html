@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel - PPC Change History</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at 0% 0%, #fff7ed 0%, transparent 45%),
+                radial-gradient(circle at 100% 0%, #eff6ff 0%, transparent 45%),
+                #f8fafc;
+    background-attachment: fixed;
+  }
+  .glass { background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); }
+  .fade-in { animation: fadeIn .3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+</style>
+</head>
+<body class="text-slate-800 min-h-screen">
+
+<div class="sticky top-0 z-20 bg-slate-900 shadow-lg shadow-slate-900/10">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-8 h-8 shrink-0 rounded-lg bg-orange-500 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-sm font-bold tracking-tight text-white leading-tight truncate">Admin Panel</h1>
+      </div>
+      <div class="hidden sm:block h-6 w-px bg-slate-700"></div>
+      <p class="hidden sm:block text-sm text-slate-400 truncate">Manage users &amp; access</p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="/clients.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">← Clients</a>
+      <div class="hidden sm:block h-5 w-px bg-slate-700"></div>
+      <button id="logoutBtn" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- Settings -->
+  <div class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-6 mb-8 fade-in">
+    <h2 class="text-base font-bold text-slate-900 mb-1">Settings</h2>
+    <p class="text-sm text-slate-500 mb-4">OpenAI API key used to generate the weekly AI summaries.</p>
+    <form id="settingsForm" class="flex flex-col gap-1">
+      <label class="block text-xs font-semibold text-slate-500 mb-1">OpenAI API Key</label>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input id="openaiApiKey" type="password" placeholder="sk-..." autocomplete="off" class="flex-1 w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-orange-400 focus:outline-none" />
+        <button type="submit" class="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Save
+        </button>
+      </div>
+      <p id="currentKeyHint" class="text-xs text-slate-400 mt-1 truncate"></p>
+    </form>
+    <div id="settingsMsg" class="hidden mt-3 text-sm rounded-lg px-3 py-2"></div>
+  </div>
+
+  <!-- Client Access (add + list combined) -->
+  <div class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden fade-in mb-8">
+    <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+      <div>
+        <h2 class="text-sm font-bold text-slate-700">Client Access</h2>
+        <p class="text-xs text-slate-400">Each client gets an auto-generated, view-only login.</p>
+      </div>
+      <span id="clientCount" class="text-[11px] font-semibold text-orange-600 bg-orange-50 ring-1 ring-orange-200 rounded-full px-2.5 py-0.5"></span>
+    </div>
+    <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+      <form id="addClientForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+        <div class="sm:col-span-3">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">New Client Name</label>
+          <input id="newClientName" type="text" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:outline-none" />
+        </div>
+        <div class="sm:col-span-1">
+          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Client
+          </button>
+        </div>
+      </form>
+      <div id="addClientMsg" class="hidden mt-3 text-sm rounded-lg px-3 py-2"></div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Client</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Login Username</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Password</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Status</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="clientTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Employee & Admin Access (add + list combined) -->
+  <div class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden fade-in">
+    <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+      <div>
+        <h2 class="text-sm font-bold text-slate-700">Employee &amp; Admin Access</h2>
+        <p class="text-xs text-slate-400">Create logins for teammates and pick which clients they can view.</p>
+      </div>
+      <span id="userCount" class="text-[11px] font-semibold text-orange-600 bg-orange-50 ring-1 ring-orange-200 rounded-full px-2.5 py-0.5"></span>
+    </div>
+    <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+      <form id="addUserForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Username</label>
+          <input id="newUsername" type="text" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:outline-none" />
+        </div>
+        <div class="sm:col-span-1">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Password</label>
+          <input id="newPassword" type="password" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:outline-none" />
+        </div>
+        <div class="sm:col-span-1">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Role</label>
+          <select id="newRole" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-400 focus:outline-none">
+            <option value="user">Employee</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="sm:col-span-4">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Client Access</label>
+          <div id="newUserClients" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="sm:col-span-4">
+          <button type="submit" class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Employee
+          </button>
+        </div>
+      </form>
+      <div id="addUserMsg" class="hidden mt-3 text-sm rounded-lg px-3 py-2"></div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Username</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Role</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Client Access</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200"></th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200">Password</th>
+            <th class="py-2.5 px-5 font-semibold border-b border-slate-200 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+let currentUserId = null;
+let allClients = [];
+
+async function loadMe() {
+  const data = await fetch('/api/me').then((r) => r.json());
+  currentUserId = data.user ? data.user.id : null;
+}
+
+async function loadSettings() {
+  const data = await fetch('/api/settings').then((r) => r.json());
+  const hint = document.getElementById('currentKeyHint');
+  hint.textContent = data.openaiApiKeySet
+    ? `Current key: ${data.openaiApiKeyMasked}`
+    : 'No API key set yet. Weekly AI summaries will fail until one is added.';
+}
+
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const openaiApiKey = document.getElementById('openaiApiKey').value.trim();
+  const msg = document.getElementById('settingsMsg');
+  msg.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ openaiApiKey }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save settings');
+    msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
+    msg.textContent = '✅ API key saved.';
+    msg.classList.remove('hidden');
+    document.getElementById('openaiApiKey').value = '';
+    await loadSettings();
+  } catch (err) {
+    msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
+    msg.textContent = '❌ ' + err.message;
+    msg.classList.remove('hidden');
+  }
+});
+
+function wirePasswordToggles() {
+  document.querySelectorAll('.pw-toggle-btn').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      const span = btn.previousElementSibling;
+      const open = btn.querySelector('.eye-open');
+      const closed = btn.querySelector('.eye-closed');
+      const showing = span.dataset.shown === 'true';
+      if (showing) {
+        span.textContent = '•'.repeat(span.dataset.pw.length);
+        span.dataset.shown = 'false';
+        open.classList.remove('hidden');
+        closed.classList.add('hidden');
+      } else {
+        span.textContent = span.dataset.pw;
+        span.dataset.shown = 'true';
+        open.classList.add('hidden');
+        closed.classList.remove('hidden');
+      }
+    })
+  );
+}
+
+async function loadClients() {
+  allClients = await fetch('/api/clients').then((r) => r.json());
+
+  document.getElementById('clientCount').textContent = `${allClients.length} client${allClients.length === 1 ? '' : 's'}`;
+  document.getElementById('clientTableBody').innerHTML = allClients
+    .map((c, i) => {
+      const enabled = c.enabled !== false;
+      const statusBadge = enabled
+        ? `<span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Enabled</span>`
+        : `<span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-500"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Disabled</span>`;
+      return `
+      <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-orange-50/70 transition-colors">
+        <td class="py-2.5 px-5 text-sm font-semibold text-slate-800 border-b border-slate-100">${escapeHtml(c.name)}</td>
+        <td class="py-2.5 px-5 text-sm font-mono text-slate-600 border-b border-slate-100">${escapeHtml(c.loginUsername || '—')}</td>
+        <td class="py-2.5 px-5 text-sm border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="pw-text font-mono text-slate-600 tracking-wider" data-pw="${escapeHtml(c.loginPassword || '')}">${'•'.repeat((c.loginPassword || '••••••••').length)}</span>
+            <button type="button" class="pw-toggle-btn text-slate-400 hover:text-slate-600 transition" title="Show/hide password">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4.477 0 8.268 2.943 9.542 7-.5 1.59-1.395 3.027-2.567 4.176M6.18 6.18A10.45 10.45 0 002.458 12c1.274 4.057 5.065 7 9.542 7 1.314 0 2.567-.246 3.708-.69"/></svg>
+            </button>
+          </div>
+        </td>
+        <td class="py-2.5 px-5 border-b border-slate-100">${statusBadge}</td>
+        <td class="py-2.5 px-5 border-b border-slate-100 text-right whitespace-nowrap">
+          <div class="inline-flex items-center gap-2">
+            <button data-id="${c.id}" data-name="${escapeHtml(c.name)}" class="reset-client-btn text-xs font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-2.5 py-1.5 rounded-lg transition">Reset Password</button>
+            <button data-id="${c.id}" data-name="${escapeHtml(c.name)}" data-enabled="${enabled}" class="toggle-client-btn text-xs font-semibold ${enabled ? 'text-slate-600 hover:text-slate-800 hover:bg-slate-100' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'} px-2.5 py-1.5 rounded-lg transition">${enabled ? 'Disable' : 'Enable'}</button>
+          </div>
+        </td>
+      </tr>`;
+    })
+    .join('');
+
+  document.querySelectorAll('.toggle-client-btn').forEach((btn) =>
+    btn.addEventListener('click', () => toggleClientEnabled(btn.dataset.id, btn.dataset.name, btn.dataset.enabled === 'true'))
+  );
+  document.querySelectorAll('.reset-client-btn').forEach((btn) =>
+    btn.addEventListener('click', () => resetClientPassword(btn.dataset.id, btn.dataset.name))
+  );
+  wirePasswordToggles();
+
+  // populate the "new user" client checkboxes
+  const box = document.getElementById('newUserClients');
+  if (!allClients.length) {
+    box.innerHTML = `<span class="text-xs text-slate-400">No clients yet — add one above.</span>`;
+  } else {
+    box.innerHTML = allClients
+      .map((c) => `
+        <label class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer transition">
+          <input type="checkbox" value="${c.id}" class="new-user-client accent-orange-500" /> ${escapeHtml(c.name)}
+        </label>`)
+      .join('');
+  }
+}
+
+async function resetClientPassword(id, name) {
+  if (!confirm(`Reset the login password for "${name}"? The old password will stop working.`)) return;
+  const res = await fetch(`/api/clients/${id}/reset-password`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Failed to reset password');
+  await loadClients();
+}
+
+async function toggleClientEnabled(id, name, currentlyEnabled) {
+  const action = currentlyEnabled ? 'disable' : 'enable';
+  if (!confirm(`${currentlyEnabled ? 'Disable' : 'Enable'} login access for "${name}"?`)) return;
+  const res = await fetch(`/api/clients/${id}/toggle-enabled`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || `Failed to ${action} client`);
+  await loadClients();
+}
+
+document.getElementById('addClientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('newClientName').value.trim();
+  const msg = document.getElementById('addClientMsg');
+  msg.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add client');
+    msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
+    msg.innerHTML = `✅ Client "${escapeHtml(data.name)}" added. Login: <strong class="font-mono">${escapeHtml(data.loginUsername)}</strong> / <strong class="font-mono">${escapeHtml(data.loginPassword)}</strong>`;
+    msg.classList.remove('hidden');
+    document.getElementById('addClientForm').reset();
+    await loadClients();
+  } catch (err) {
+    msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
+    msg.textContent = '❌ ' + err.message;
+    msg.classList.remove('hidden');
+  }
+});
+
+function clientAccessCell(u) {
+  const ids = u.clientIds || [];
+  if (u.role === 'admin') {
+    return `<span class="text-xs text-slate-400">All clients (admin)</span>`;
+  }
+  const names = ids.map((id) => allClients.find((c) => c.id === id)?.name).filter(Boolean);
+  return names.length
+    ? `<div class="flex flex-wrap gap-1">${names.map((n) => `<span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">${escapeHtml(n)}</span>`).join('')}</div>`
+    : `<span class="text-xs text-slate-400">No access</span>`;
+}
+
+function manageAccessCell(u) {
+  if (u.role === 'admin') return '';
+  return `<button data-id="${u.id}" class="manage-access-btn text-[11px] font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-2 py-1 rounded-lg transition whitespace-nowrap">Manage access</button>`;
+}
+
+function accessEditorRow(u) {
+  const checks = allClients
+    .map((c) => {
+      const checked = (u.clientIds || []).includes(c.id) ? 'checked' : '';
+      return `
+        <label class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg px-2.5 py-1.5 cursor-pointer transition">
+          <input type="checkbox" value="${c.id}" class="access-edit-client accent-orange-500" ${checked} /> ${escapeHtml(c.name)}
+        </label>`;
+    })
+    .join('');
+  return `
+  <tr id="access-editor-${u.id}" class="bg-orange-50/50">
+    <td colspan="6" class="py-3 px-5 border-b border-slate-100">
+      <div class="flex flex-wrap items-center gap-2">
+        ${checks || '<span class="text-xs text-slate-400">No clients available.</span>'}
+        <button data-id="${u.id}" class="save-access-btn text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg shadow-sm transition">Save</button>
+        <button data-id="${u.id}" class="cancel-access-btn text-xs font-semibold text-slate-500 hover:text-slate-700 px-2 py-1.5">Cancel</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+async function saveAccess(userId) {
+  const row = document.getElementById(`access-editor-${userId}`);
+  const clientIds = [...row.querySelectorAll('.access-edit-client:checked')].map((el) => el.value);
+  const res = await fetch(`/api/users/${userId}/access`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientIds }),
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Failed to update access');
+  await loadUsers();
+}
+
+async function loadUsers() {
+  const users = await fetch('/api/users').then((r) => r.json());
+  document.getElementById('userCount').textContent = `${users.length} user${users.length === 1 ? '' : 's'}`;
+  document.getElementById('userTableBody').innerHTML = users
+    .map((u, i) => {
+      const roleBadge = u.role === 'admin'
+        ? `<span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>Admin</span>`
+        : u.role === 'client'
+        ? `<span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-amber-50 text-amber-700"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Client</span>`
+        : `<span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>Employee</span>`;
+      const isSelf = u.id === currentUserId;
+      const enabled = u.enabled !== false;
+      const pw = u.password || '';
+      const pwCell = pw
+        ? `<div class="flex items-center gap-2">
+            <span class="pw-text font-mono text-slate-600 tracking-wider" data-pw="${escapeHtml(pw)}">${'•'.repeat(pw.length)}</span>
+            <button type="button" class="pw-toggle-btn text-slate-400 hover:text-slate-600 transition" title="Show/hide password">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4.477 0 8.268 2.943 9.542 7-.5 1.59-1.395 3.027-2.567 4.176M6.18 6.18A10.45 10.45 0 002.458 12c1.274 4.057 5.065 7 9.542 7 1.314 0 2.567-.246 3.708-.69"/></svg>
+            </button>
+          </div>`
+        : `<span class="text-xs text-slate-400">—</span>`;
+      return `
+      <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-orange-50/70 transition-colors">
+        <td class="py-2.5 px-5 text-sm font-semibold text-slate-800 border-b border-slate-100">${escapeHtml(u.username)}</td>
+        <td class="py-2.5 px-5 border-b border-slate-100">${roleBadge}</td>
+        <td class="py-2.5 px-5 border-b border-slate-100">${clientAccessCell(u)}</td>
+        <td class="py-2.5 px-5 border-b border-slate-100">${manageAccessCell(u)}</td>
+        <td class="py-2.5 px-5 text-sm border-b border-slate-100">${pwCell}</td>
+        <td class="py-2.5 px-5 border-b border-slate-100 text-right">
+          ${isSelf
+            ? `<span class="text-xs text-slate-400">You</span>`
+            : `<button data-id="${u.id}" data-name="${escapeHtml(u.username)}" data-enabled="${enabled}" class="toggle-user-btn text-xs font-semibold ${enabled ? 'text-slate-600 hover:text-slate-800 hover:bg-slate-100' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'} px-2.5 py-1.5 rounded-lg transition">${enabled ? 'Disable' : 'Enable'}</button>`}
+        </td>
+      </tr>`;
+    })
+    .join('');
+
+  document.querySelectorAll('.toggle-user-btn').forEach((btn) =>
+    btn.addEventListener('click', () => toggleUserEnabled(btn.dataset.id, btn.dataset.name, btn.dataset.enabled === 'true'))
+  );
+  wirePasswordToggles();
+
+  document.querySelectorAll('.manage-access-btn').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      const u = users.find((x) => x.id === btn.dataset.id);
+      const existing = document.getElementById(`access-editor-${u.id}`);
+      if (existing) {
+        existing.remove();
+        return;
+      }
+      const row = btn.closest('tr');
+      row.insertAdjacentHTML('afterend', accessEditorRow(u));
+      const editorRow = document.getElementById(`access-editor-${u.id}`);
+      editorRow.querySelector('.save-access-btn').addEventListener('click', () => saveAccess(u.id));
+      editorRow.querySelector('.cancel-access-btn').addEventListener('click', () => editorRow.remove());
+    })
+  );
+}
+
+async function toggleUserEnabled(id, name, currentlyEnabled) {
+  const action = currentlyEnabled ? 'disable' : 'enable';
+  if (!confirm(`${currentlyEnabled ? 'Disable' : 'Enable'} login access for "${name}"?`)) return;
+  const res = await fetch(`/api/users/${id}/toggle-enabled`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || `Failed to ${action} user`);
+  await loadUsers();
+}
+
+document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('newUsername').value.trim();
+  const password = document.getElementById('newPassword').value;
+  const role = document.getElementById('newRole').value;
+  const clientIds = [...document.querySelectorAll('.new-user-client:checked')].map((el) => el.value);
+  const msg = document.getElementById('addUserMsg');
+  msg.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role, clientIds }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add user');
+    msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
+    msg.textContent = `✅ User "${data.username}" added successfully.`;
+    msg.classList.remove('hidden');
+    document.getElementById('addUserForm').reset();
+    await loadUsers();
+  } catch (err) {
+    msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
+    msg.textContent = '❌ ' + err.message;
+    msg.classList.remove('hidden');
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login.html';
+});
+
+(async () => {
+  await loadMe();
+  await loadSettings();
+  await loadClients();
+  await loadUsers();
+})();
+</script>
+</body>
+</html>

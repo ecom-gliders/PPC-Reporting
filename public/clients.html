@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Select Client - PPC Change History</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at 0% 0%, #fff7ed 0%, transparent 45%),
+                radial-gradient(circle at 100% 0%, #eff6ff 0%, transparent 45%),
+                #f8fafc;
+    background-attachment: fixed;
+  }
+  .glass { background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); }
+  .fade-in { animation: fadeIn .3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+  .client-card { transition: all .15s ease; }
+  .client-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px rgba(249,115,22,0.25); }
+</style>
+</head>
+<body class="text-slate-800 min-h-screen">
+
+<div class="sticky top-0 z-20 glass border-b border-slate-200/70 shadow-sm">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 flex items-center justify-center shadow-lg shadow-orange-200/70 ring-1 ring-orange-300/40">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">PPC Change History</h1>
+        <p class="text-sm text-slate-500">Select a client to view their dashboard</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a id="adminLink" href="/admin.html" class="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Admin Panel</a>
+      <span id="userBadge" class="text-sm font-medium text-slate-500"></span>
+      <button id="logoutBtn" class="text-sm font-semibold text-slate-600 hover:text-rose-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div id="clientGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+  <div id="emptyState" class="hidden bg-white rounded-2xl border-2 border-dashed border-slate-300 p-10 text-center">
+    <p class="text-slate-500 text-sm">No clients have been assigned to your account yet. Please contact your administrator.</p>
+  </div>
+</div>
+
+<script>
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+const colors = [
+  ['from-orange-500 to-amber-400', 'bg-orange-50', 'text-orange-600'],
+  ['from-sky-500 to-cyan-400', 'bg-sky-50', 'text-sky-600'],
+  ['from-violet-500 to-purple-400', 'bg-violet-50', 'text-violet-600'],
+  ['from-emerald-500 to-teal-400', 'bg-emerald-50', 'text-emerald-600'],
+  ['from-rose-500 to-pink-400', 'bg-rose-50', 'text-rose-600'],
+  ['from-indigo-500 to-blue-400', 'bg-indigo-50', 'text-indigo-600'],
+];
+
+let currentUser = null;
+
+async function loadMe() {
+  const data = await fetch('/api/me').then((r) => r.json());
+  if (!data.user) { window.location.href = '/login.html'; return; }
+  currentUser = data.user;
+  document.getElementById('userBadge').textContent = `👤 ${data.user.username}`;
+  if (data.user.role === 'admin') document.getElementById('adminLink').classList.remove('hidden');
+}
+
+async function loadClients() {
+  const clients = await fetch('/api/clients').then((r) => r.json());
+
+  // client logins always belong to exactly one client - skip the picker entirely
+  if (currentUser && currentUser.role === 'client' && clients.length === 1) {
+    window.location.href = `/dashboard.html?clientId=${clients[0].id}`;
+    return;
+  }
+
+  const grid = document.getElementById('clientGrid');
+  const empty = document.getElementById('emptyState');
+
+  if (!clients.length) {
+    grid.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  grid.innerHTML = clients
+    .map((c, i) => {
+      const [grad, soft, text] = colors[i % colors.length];
+      const initials = c.name.trim().slice(0, 2).toUpperCase();
+      return `
+      <a href="/dashboard.html?clientId=${c.id}" class="client-card fade-in bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-5 flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-extrabold text-lg shadow-md">${escapeHtml(initials)}</div>
+          <div>
+            <h3 class="font-bold text-slate-900 leading-tight">${escapeHtml(c.name)}</h3>
+            <p class="text-xs text-slate-400">PPC Account</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="${soft} rounded-xl py-2">
+            <p class="text-lg font-extrabold text-slate-900">${c.totalChanges}</p>
+            <p class="text-[10px] font-semibold text-slate-400 uppercase">Changes</p>
+          </div>
+          <div class="${soft} rounded-xl py-2">
+            <p class="text-lg font-extrabold text-slate-900">${c.totalAsins}</p>
+            <p class="text-[10px] font-semibold text-slate-400 uppercase">ASINs</p>
+          </div>
+          <div class="${soft} rounded-xl py-2">
+            <p class="text-lg font-extrabold text-slate-900">${c.totalDates}</p>
+            <p class="text-[10px] font-semibold text-slate-400 uppercase">Days</p>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-1 text-sm font-semibold ${text}">
+          Open Dashboard
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </span>
+      </a>`;
+    })
+    .join('');
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login.html';
+});
+
+(async () => {
+  await loadMe();
+  await loadClients();
+})();
+</script>
+</body>
+</html>
