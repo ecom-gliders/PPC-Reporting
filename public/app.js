@@ -73,6 +73,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 
     if (btn.dataset.tab === 'asin') loadAsinList();
     if (btn.dataset.tab === 'summary') loadSummaries();
+    if (btn.dataset.tab === 'graphs') loadGraphs();
   });
 });
 
@@ -140,6 +141,99 @@ async function loadStats() {
   document.getElementById('statDates').textContent = stats.totalDates;
   document.getElementById('statSummaries').textContent = summaries.length;
 }
+
+// ---------------- GRAPHS TAB ----------------
+const chartPalette = ['#f97316', '#0ea5e9', '#8b5cf6', '#10b981', '#ec4899', '#6366f1', '#f59e0b', '#14b8a6', '#ef4444', '#84cc16'];
+let dashboardCharts = {};
+
+function destroyDashboardCharts() {
+  Object.values(dashboardCharts).forEach((c) => c && c.destroy());
+  dashboardCharts = {};
+}
+
+async function loadGraphs() {
+  const from = document.getElementById('graphFromDate').value;
+  const to = document.getElementById('graphToDate').value;
+  let url = `/api/analytics?${cq()}`;
+  if (from) url += `&from=${from}`;
+  if (to) url += `&to=${to}`;
+  const data = await fetch(url).then((r) => r.json());
+
+  destroyDashboardCharts();
+
+  dashboardCharts.activity = new Chart(document.getElementById('chartActivity'), {
+    type: 'line',
+    data: {
+      labels: data.activityOverTime.map((d) => d.date),
+      datasets: [{
+        label: 'Changes',
+        data: data.activityOverTime.map((d) => d.count),
+        borderColor: '#f97316',
+        backgroundColor: 'rgba(249,115,22,0.1)',
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } },
+  });
+
+  dashboardCharts.actionBreakdown = new Chart(document.getElementById('chartActionBreakdown'), {
+    type: 'pie',
+    data: {
+      labels: data.actionBreakdown.map((d) => d.action),
+      datasets: [{
+        data: data.actionBreakdown.map((d) => d.count),
+        backgroundColor: data.actionBreakdown.map((_, i) => chartPalette[i % chartPalette.length]),
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+  });
+
+  dashboardCharts.bids = new Chart(document.getElementById('chartBids'), {
+    type: 'bar',
+    data: {
+      labels: ['Bid Increases', 'Bid Decreases'],
+      datasets: [{
+        data: [data.bidIncreases, data.bidDecreases],
+        backgroundColor: ['#10b981', '#ef4444'],
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } },
+  });
+
+  dashboardCharts.topAsins = new Chart(document.getElementById('chartTopAsins'), {
+    type: 'bar',
+    data: {
+      labels: data.topAsins.map((d) => d.asin),
+      datasets: [{
+        label: 'Changes',
+        data: data.topAsins.map((d) => d.count),
+        backgroundColor: '#0ea5e9',
+      }],
+    },
+    options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } },
+  });
+
+  dashboardCharts.campaignsPaused = new Chart(document.getElementById('chartCampaignsPaused'), {
+    type: 'bar',
+    data: {
+      labels: data.campaignsPaused.map((d) => d.date),
+      datasets: [{
+        label: 'Campaigns Paused',
+        data: data.campaignsPaused.map((d) => d.count),
+        backgroundColor: '#8b5cf6',
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } },
+  });
+}
+
+document.getElementById('graphApplyFilterBtn').addEventListener('click', loadGraphs);
+document.getElementById('graphClearFilterBtn').addEventListener('click', () => {
+  document.getElementById('graphFromDate').value = '';
+  document.getElementById('graphToDate').value = '';
+  loadGraphs();
+});
 
 // ---------------- DAILY TAB ----------------
 let availableDates = [];
@@ -425,7 +519,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 // ---------------- INIT ----------------
 async function refreshAll() {
-  await Promise.all([loadStats(), loadDates()]);
+  await Promise.all([loadStats(), loadDates(), loadGraphs()]);
 }
 loadMe();
 loadClientName();
