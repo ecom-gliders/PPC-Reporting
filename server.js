@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs');
 const db = require('./db');
 const { parseCsv } = require('./parser');
 const { generateWeeklySummary } = require('./summary');
+const { sendWeeklyReportEmail } = require('./email');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -85,6 +86,9 @@ app.post('/api/login', (req, res) => {
       return res.status(403).json({ error: 'This account has been disabled. Contact your administrator.' });
     }
   }
+  user.lastLogin = new Date().toISOString();
+  db.saveUsers(users);
+
   req.session.user = { id: user.id, username: user.username, role: user.role };
   res.json({ ok: true, user: req.session.user });
 });
@@ -117,6 +121,7 @@ app.get('/api/users', requireAdmin, (req, res) => {
       clientIds: u.clientIds || [],
       enabled: u.enabled !== false,
       createdAt: u.createdAt,
+      lastLogin: u.lastLogin || null,
     }));
   res.json(users);
 });
@@ -205,15 +210,29 @@ app.get('/api/settings', requireAdmin, (req, res) => {
   const key = settings.openaiApiKey || '';
   // mask the key so it isn't fully exposed once saved
   const masked = key ? `${key.slice(0, 3)}${'•'.repeat(10)}${key.slice(-4)}` : '';
-  res.json({ openaiApiKeySet: !!key, openaiApiKeyMasked: masked });
+  const smtpPass = settings.smtpPass || '';
+  res.json({
+    openaiApiKeySet: !!key,
+    openaiApiKeyMasked: masked,
+    smtpHost: settings.smtpHost || '',
+    smtpPort: settings.smtpPort || '',
+    smtpUser: settings.smtpUser || '',
+    smtpFrom: settings.smtpFrom || '',
+    smtpPassSet: !!smtpPass,
+    smtpPassMasked: smtpPass ? '•'.repeat(10) : '',
+  });
 });
 
 app.post('/api/settings', requireAdmin, (req, res) => {
-  const { openaiApiKey } = req.body || {};
-  if (typeof openaiApiKey !== 'string') return res.status(400).json({ error: 'openaiApiKey is required' });
+  const { openaiApiKey, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom } = req.body || {};
 
   const settings = db.getSettings();
-  settings.openaiApiKey = openaiApiKey.trim();
+  if (typeof openaiApiKey === 'string') settings.openaiApiKey = openaiApiKey.trim();
+  if (typeof smtpHost === 'string') settings.smtpHost = smtpHost.trim();
+  if (typeof smtpPort === 'string' || typeof smtpPort === 'number') settings.smtpPort = String(smtpPort).trim();
+  if (typeof smtpUser === 'string') settings.smtpUser = smtpUser.trim();
+  if (typeof smtpFrom === 'string') settings.smtpFrom = smtpFrom.trim();
+  if (typeof smtpPass === 'string' && smtpPass.trim()) settings.smtpPass = smtpPass.trim();
   db.saveSettings(settings);
   res.json({ ok: true });
 });
@@ -227,15 +246,18 @@ app.get('/api/clients', (req, res) => {
 
   // attach per-client stats
   const changes = db.getChanges();
+  const users = db.getUsers();
   const result = clients.map((c) => {
     const clientChanges = changes.filter((ch) => ch.clientId === c.id);
     const dates = new Set(clientChanges.map((ch) => ch.date));
     const asins = new Set(clientChanges.map((ch) => ch.asin));
+    const clientUser = users.find((u) => u.id === c.userId);
     const stats = {
       ...c,
       totalChanges: clientChanges.length,
       totalDates: dates.size,
       totalAsins: asins.size,
+      lastLogin: (clientUser && clientUser.lastLogin) || null,
     };
     if (!isAdmin) {
       delete stats.loginUsername;
@@ -253,7 +275,7 @@ function slugify(name) {
 }
 
 app.post('/api/clients', requireAdmin, (req, res) => {
-  const { name } = req.body || {};
+  const { name, email } = req.body || {};
   if (!name || !name.trim()) return res.status(400).json({ error: 'Client name is required' });
   const trimmedName = name.trim();
 
@@ -263,6 +285,7 @@ app.post('/api/clients', requireAdmin, (req, res) => {
   const newClient = {
     id: crypto.randomUUID(),
     name: trimmedName,
+    email: (email || '').trim(),
     createdAt: new Date().toISOString(),
   };
 
@@ -304,6 +327,20 @@ app.post('/api/clients/:id/toggle-enabled', requireAdmin, (req, res) => {
   client.enabled = client.enabled === false ? true : false;
   db.saveClients(clients);
   res.json({ ok: true, enabled: client.enabled });
+});
+
+// Update a client's notification email
+app.put('/api/clients/:id/email', requireAdmin, (req, res) => {
+  const { email } = req.body || {};
+  if (typeof email !== 'string') return res.status(400).json({ error: 'email is required' });
+
+  const clients = db.getClients();
+  const client = clients.find((c) => c.id === req.params.id);
+  if (!client) return res.status(404).json({ error: 'Client not found' });
+
+  client.email = email.trim();
+  db.saveClients(clients);
+  res.json({ ok: true, email: client.email });
 });
 
 app.delete('/api/clients/:id', requireAdmin, (req, res) => {
@@ -437,9 +474,8 @@ app.get('/api/stats', requireClientAccess, (req, res) => {
   res.json({ totalChanges: changes.length, totalDates: dates.length, totalAsins: asins.length });
 });
 
-app.get('/api/analytics', requireClientAccess, (req, res) => {
-  const { from, to } = req.query;
-  let changes = db.getChanges().filter((c) => c.clientId === req.clientId);
+function buildAnalytics(allChanges, clientId, from, to) {
+  let changes = allChanges.filter((c) => c.clientId === clientId);
   if (from) changes = changes.filter((c) => c.date >= from);
   if (to) changes = changes.filter((c) => c.date <= to);
 
@@ -482,7 +518,19 @@ app.get('/api/analytics', requireClientAccess, (req, res) => {
   }
   const campaignsPaused = Object.entries(byPauseDate).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, count]) => ({ date, count }));
 
-  res.json({ activityOverTime, actionBreakdown, bidIncreases, bidDecreases, topAsins, campaignsPaused });
+  return { totalChanges: changes.length, activityOverTime, actionBreakdown, bidIncreases, bidDecreases, topAsins, campaignsPaused };
+}
+
+app.get('/api/analytics', requireClientAccess, (req, res) => {
+  const { from, to, compareFrom, compareTo } = req.query;
+  const allChanges = db.getChanges();
+  const result = buildAnalytics(allChanges, req.clientId, from, to);
+
+  if (compareFrom && compareTo) {
+    result.compare = buildAnalytics(allChanges, req.clientId, compareFrom, compareTo);
+  }
+
+  res.json(result);
 });
 
 // ================= SUMMARIES (per client) =================
@@ -495,12 +543,33 @@ app.post('/api/summaries/generate', requireClientAccess, requireAdmin, async (re
   try {
     const { from, to, context } = req.body || {};
     const summary = await generateWeeklySummary({ clientId: req.clientId, from, to, context });
+    await emailWeeklyReport(req.clientId, summary);
     res.json(summary);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
+// Emails the weekly report to a client's notification address, if configured
+const APP_URL = process.env.APP_URL || 'https://ppc-reporting.onrender.com';
+async function emailWeeklyReport(clientId, summary) {
+  const client = db.getClients().find((c) => c.id === clientId);
+  if (!client || !client.email) return;
+  try {
+    await sendWeeklyReportEmail({
+      to: client.email,
+      clientName: client.name,
+      from: summary.from,
+      to: summary.to,
+      totalChanges: summary.totalChanges,
+      asinCount: summary.asinCount,
+      reportUrl: `${APP_URL}/dashboard.html?clientId=${clientId}`,
+    });
+  } catch (err) {
+    console.error(`[email] Failed to send weekly report to ${client.email}:`, err.message);
+  }
+}
 
 // ================= UTILITY =================
 // Delete all change data for a client
@@ -515,7 +584,8 @@ cron.schedule('0 2 * * 6', async () => {
   const clients = db.getClients();
   for (const client of clients) {
     try {
-      await generateWeeklySummary({ clientId: client.id });
+      const summary = await generateWeeklySummary({ clientId: client.id });
+      await emailWeeklyReport(client.id, summary);
       console.log(`[cron] Weekly summary generated for client "${client.name}".`);
     } catch (err) {
       console.error(`[cron] Failed to generate weekly summary for client "${client.name}":`, err.message);

@@ -20,7 +20,14 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
   .client-card { transition: all .15s ease; }
   .client-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px rgba(249,115,22,0.25); }
+  html.dark { filter: invert(1) hue-rotate(180deg); }
+  html.dark img, html.dark svg, html.dark video, html.dark canvas, html.dark iframe {
+    filter: invert(1) hue-rotate(180deg);
+  }
 </style>
+<script>
+  if (localStorage.getItem('darkMode') === '1') document.documentElement.classList.add('dark');
+</script>
 </head>
 <body class="text-slate-800 min-h-screen">
 
@@ -38,6 +45,7 @@
     <div class="flex items-center gap-2">
       <a id="adminLink" href="/admin.html" class="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Admin Panel</a>
       <span id="userBadge" class="text-sm font-medium text-slate-500"></span>
+      <button id="darkModeToggle" title="Toggle dark mode" class="text-sm font-semibold text-slate-600 hover:text-orange-600 px-2.5 py-2.5 rounded-xl hover:bg-slate-100 transition">🌙</button>
       <button id="logoutBtn" class="text-sm font-semibold text-slate-600 hover:text-rose-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Logout</button>
     </div>
   </div>
@@ -127,6 +135,14 @@ async function loadClients() {
     })
     .join('');
 }
+
+const darkModeToggle = document.getElementById('darkModeToggle');
+darkModeToggle.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+darkModeToggle.addEventListener('click', () => {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  darkModeToggle.textContent = isDark ? '☀️' : '🌙';
+});
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });

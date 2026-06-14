@@ -57,6 +57,16 @@ function shortName(changeLevel, asin) {
 }
 
 // ---------------- TABS ----------------
+const darkToggleBtn = document.getElementById('darkModeToggle');
+if (darkToggleBtn) {
+  darkToggleBtn.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+  darkToggleBtn.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', isDark ? '1' : '0');
+    darkToggleBtn.textContent = isDark ? '☀️' : '🌙';
+  });
+}
+
 document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach((b) => {
@@ -155,25 +165,52 @@ async function loadGraphs() {
   let url = `/api/analytics?${cq()}`;
   if (from) url += `&from=${from}`;
   if (to) url += `&to=${to}`;
+
+  const compareEnabled = document.getElementById('compareToggle').checked;
+  const compareFrom = document.getElementById('compareFromDate').value;
+  const compareTo = document.getElementById('compareToDate').value;
+  if (compareEnabled && compareFrom && compareTo) {
+    url += `&compareFrom=${compareFrom}&compareTo=${compareTo}`;
+  }
+
   const data = await fetch(url).then((r) => r.json());
 
   destroyDashboardCharts();
 
+  const activityDatasets = [{
+    label: 'Changes',
+    data: data.activityOverTime.map((d) => d.count),
+    borderColor: '#f97316',
+    backgroundColor: 'rgba(249,115,22,0.1)',
+    fill: true,
+    tension: 0.3,
+  }];
+
+  if (data.compare) {
+    activityDatasets.push({
+      label: 'Compare Period',
+      data: data.compare.activityOverTime.map((d) => d.count),
+      borderColor: '#94a3b8',
+      backgroundColor: 'rgba(148,163,184,0.1)',
+      borderDash: [6, 4],
+      fill: true,
+      tension: 0.3,
+    });
+  }
+
+  const labels = data.activityOverTime.map((d) => d.date);
+  const compareLabels = data.compare ? data.compare.activityOverTime.map((d) => d.date) : [];
+
   dashboardCharts.activity = new Chart(document.getElementById('chartActivity'), {
     type: 'line',
     data: {
-      labels: data.activityOverTime.map((d) => d.date),
-      datasets: [{
-        label: 'Changes',
-        data: data.activityOverTime.map((d) => d.count),
-        borderColor: '#f97316',
-        backgroundColor: 'rgba(249,115,22,0.1)',
-        fill: true,
-        tension: 0.3,
-      }],
+      labels: labels.length >= compareLabels.length ? labels : compareLabels,
+      datasets: activityDatasets,
     },
-    options: { responsive: true, plugins: { legend: { display: false } } },
+    options: { responsive: true, plugins: { legend: { display: !!data.compare } } },
   });
+
+  renderCompareSummary(data);
 
   dashboardCharts.actionBreakdown = new Chart(document.getElementById('chartActionBreakdown'), {
     type: 'pie',
@@ -233,6 +270,54 @@ document.getElementById('graphClearFilterBtn').addEventListener('click', () => {
   loadGraphs();
 });
 
+function renderCompareSummary(data) {
+  const box = document.getElementById('compareSummary');
+  if (!data.compare) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+
+  const pct = (cur, prev) => {
+    if (!prev) return cur ? '+100%' : '0%';
+    const diff = ((cur - prev) / prev) * 100;
+    return `${diff >= 0 ? '+' : ''}${diff.toFixed(0)}%`;
+  };
+
+  const cards = [
+    { label: 'Total Changes', cur: data.totalChanges, prev: data.compare.totalChanges },
+    { label: 'Bid Increases', cur: data.bidIncreases, prev: data.compare.bidIncreases },
+    { label: 'Bid Decreases', cur: data.bidDecreases, prev: data.compare.bidDecreases },
+    { label: 'Campaigns Paused', cur: data.campaignsPaused.reduce((s, d) => s + d.count, 0), prev: data.compare.campaignsPaused.reduce((s, d) => s + d.count, 0) },
+  ];
+
+  box.innerHTML = cards.map((c) => {
+    const diff = pct(c.cur, c.prev);
+    const up = c.cur >= c.prev;
+    const color = up ? 'text-emerald-600' : 'text-rose-600';
+    return `
+      <div class="bg-white rounded-2xl border-2 border-slate-300 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">${c.label}</div>
+        <div class="text-2xl font-bold text-slate-900">${c.cur}</div>
+        <div class="text-xs mt-1"><span class="${color} font-semibold">${diff}</span> <span class="text-slate-400">vs ${c.prev} prev</span></div>
+      </div>`;
+  }).join('');
+  box.classList.remove('hidden');
+}
+
+document.getElementById('compareToggle').addEventListener('change', (e) => {
+  const row = document.getElementById('compareDateRow');
+  if (e.target.checked) {
+    row.classList.remove('hidden');
+  } else {
+    row.classList.add('hidden');
+    document.getElementById('compareSummary').classList.add('hidden');
+  }
+  loadGraphs();
+});
+document.getElementById('compareFromDate').addEventListener('change', loadGraphs);
+document.getElementById('compareToDate').addEventListener('change', loadGraphs);
+
 // ---------------- DAILY TAB ----------------
 let availableDates = [];
 
@@ -255,10 +340,24 @@ function formatDate(iso) {
 
 document.getElementById('dateSelect').addEventListener('change', (e) => loadDailyChanges(e.target.value));
 
+let lastDailyData = null;
+document.getElementById('dailySearch').addEventListener('input', () => renderDailyChanges());
+
 async function loadDailyChanges(date) {
   const container = document.getElementById('dailyContainer');
   container.innerHTML = `<p class="text-slate-400 text-sm">Loading...</p>`;
   const data = await fetch(`/api/changes?date=${date}&${cq()}`).then((r) => r.json());
+  lastDailyData = data;
+  renderDailyChanges();
+}
+
+function renderDailyChanges() {
+  const data = lastDailyData;
+  const container = document.getElementById('dailyContainer');
+  if (!data) return;
+
+  const search = document.getElementById('dailySearch').value.trim().toLowerCase();
+
   document.getElementById('dailyMeta').textContent = `${data.total} changes across ${data.asins} ASIN${data.asins === 1 ? '' : 's'}`;
 
   if (data.total === 0) {
@@ -266,11 +365,27 @@ async function loadDailyChanges(date) {
     return;
   }
 
-  const entries = Object.entries(data.grouped).sort((a, b) => {
+  let entries = Object.entries(data.grouped).sort((a, b) => {
     if (a[0] === 'UNASSIGNED') return 1;
     if (b[0] === 'UNASSIGNED') return -1;
     return b[1].length - a[1].length;
   });
+
+  if (search) {
+    entries = entries
+      .map(([asin, rows]) => {
+        if (asin.toLowerCase().includes(search)) return [asin, rows];
+        const filteredRows = rows.filter((r) => shortName(r.changeLevel, r.asin).toLowerCase().includes(search) || r.action.toLowerCase().includes(search));
+        return [asin, filteredRows];
+      })
+      .filter(([, rows]) => rows.length > 0);
+
+    if (!entries.length) {
+      container.innerHTML = `<p class="text-slate-400 text-sm">No changes match "${escapeHtml(search)}".</p>`;
+      return;
+    }
+  }
+
   container.innerHTML = entries
     .map(([asin, rows]) => {
       const rowsHtml = rows
@@ -322,6 +437,9 @@ async function loadDailyChanges(date) {
 }
 
 // ---------------- ASIN TAB ----------------
+let lastAsinList = [];
+document.getElementById('asinSearch').addEventListener('input', () => renderAsinList());
+
 async function loadAsinList() {
   let asins = await fetch(`/api/asins?${cq()}`).then((r) => r.json());
   asins = asins.sort((a, b) => {
@@ -329,9 +447,18 @@ async function loadAsinList() {
     if (b.asin === 'UNASSIGNED') return -1;
     return b.count - a.count;
   });
+  lastAsinList = asins;
+  renderAsinList();
+}
+
+function renderAsinList() {
+  let asins = lastAsinList;
+  const search = document.getElementById('asinSearch').value.trim().toLowerCase();
+  if (search) asins = asins.filter((a) => a.asin.toLowerCase().includes(search));
+
   const list = document.getElementById('asinList');
   if (!asins.length) {
-    list.innerHTML = `<p class="text-slate-400 text-sm p-4">No data yet.</p>`;
+    list.innerHTML = `<p class="text-slate-400 text-sm p-4">No ASINs match your search.</p>`;
     return;
   }
   list.innerHTML = asins
