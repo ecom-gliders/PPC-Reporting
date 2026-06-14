@@ -474,4 +474,11 @@ cron.schedule('0 2 * * 6', async () => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`PPC Change History app running at http://localhost:${PORT}`));
+db.ready
+  .then(() => {
+    app.listen(PORT, () => console.log(`PPC Change History app running at http://localhost:${PORT}`));
+  })
+  .catch((err) => {
+    console.error('Failed to connect to database:', err.message);
+    process.exit(1);
+  });
