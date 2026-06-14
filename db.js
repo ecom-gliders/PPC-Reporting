@@ -59,6 +59,7 @@ async function init() {
 const ready = init();
 
 module.exports = {
+  pool,
   ready,
   getChanges: () => cache.changes,
   saveChanges: (data) => save('changes', data),

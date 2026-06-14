@@ -6,6 +6,7 @@ const cron = require('node-cron');
 const crypto = require('crypto');
 const path = require('path');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const bcrypt = require('bcryptjs');
 
 const db = require('./db');
@@ -23,6 +24,7 @@ app.use(cors());
 app.use(express.json());
 app.use(
   session({
+    store: new pgSession({ pool: db.pool, createTableIfMissing: true }),
     secret: process.env.SESSION_SECRET || 'ppc-change-history-secret',
     resave: false,
     saveUninitialized: false,
