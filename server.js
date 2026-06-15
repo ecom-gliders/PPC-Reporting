@@ -648,6 +648,27 @@ async function emailWeeklyReport(clientId, summary) {
 }
 
 // ================= UTILITY =================
+// Test SMTP connection and send a test email
+app.post('/api/test-email', requireAdmin, async (req, res) => {
+  const { getTransport } = require('./email');
+  const transport = getTransport();
+  if (!transport) return res.status(400).json({ error: 'SMTP not configured' });
+  try {
+    await transport.verify();
+    const settings = db.getSettings();
+    const to = (req.body && req.body.to) || settings.smtpUser;
+    await transport.sendMail({
+      from: settings.smtpFrom || settings.smtpUser,
+      to,
+      subject: 'PPC Dashboard — SMTP Test',
+      html: '<p>SMTP is working correctly from the PPC Dashboard.</p>',
+    });
+    res.json({ ok: true, sentTo: to });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete all change data for a client
 app.delete('/api/changes', requireClientAccess, requireWriteAccess, (req, res) => {
   db.saveChanges(db.getChanges().filter((c) => c.clientId !== req.clientId));
