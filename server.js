@@ -112,7 +112,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ================= ADMIN: UPLOAD LOGS =================
 app.get('/api/upload-logs', requireAdmin, (req, res) => {
-  const logs = db.getUploadLogs().slice().sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  const { clientId } = req.query;
+  let logs = db.getUploadLogs();
+  if (clientId) logs = logs.filter((l) => l.clientId === clientId);
+  logs = logs.slice().sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
   res.json(logs);
 });
 

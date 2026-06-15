@@ -41,7 +41,7 @@
       <p class="hidden sm:block text-sm text-slate-400 truncate">Who uploaded what, when, and why</p>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <a href="/dashboard.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">← Dashboard</a>
+      <a id="backLink" href="/clients.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">← Dashboard</a>
       <div class="hidden sm:block h-5 w-px bg-slate-700"></div>
       <button id="darkModeToggle" title="Toggle dark mode" class="text-xs font-semibold text-slate-300 hover:text-white px-2.5 py-2 rounded-lg hover:bg-white/10 transition">🌙</button>
       <button id="logoutBtn" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">Logout</button>
@@ -103,8 +103,18 @@ function formatPkt(iso) {
 let allLogs = [];
 let detailStore = [];
 
+const CLIENT_ID = new URLSearchParams(window.location.search).get('clientId');
+
 async function loadLogs() {
-  allLogs = await fetch('/api/upload-logs').then((r) => r.json());
+  if (CLIENT_ID) {
+    document.getElementById('backLink').href = `/dashboard.html?clientId=${encodeURIComponent(CLIENT_ID)}`;
+    allLogs = await fetch(`/api/upload-logs?clientId=${encodeURIComponent(CLIENT_ID)}`).then((r) => r.json());
+    if (allLogs.length) {
+      document.querySelector('p.text-slate-400').textContent = `${allLogs[0].clientName} — Who uploaded what, when, and why`;
+    }
+  } else {
+    allLogs = await fetch('/api/upload-logs').then((r) => r.json());
+  }
   renderLogs();
 }
 

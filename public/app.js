@@ -686,7 +686,9 @@ async function loadMe() {
   document.getElementById('userBadge').textContent = `👤 ${data.user.username}`;
   if (data.user.role === 'admin') {
     document.getElementById('adminLink').classList.remove('hidden');
-    document.getElementById('logsLink').classList.remove('hidden');
+    const logsLink = document.getElementById('logsLink');
+    logsLink.href = `/logs.html?clientId=${encodeURIComponent(CLIENT_ID)}`;
+    logsLink.classList.remove('hidden');
   }
   if (data.user.role === 'client') {
     const uploadLabel = document.getElementById('uploadLabel');
