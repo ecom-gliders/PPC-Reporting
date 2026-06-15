@@ -44,6 +44,7 @@
     </div>
     <div class="flex items-center gap-2">
       <a id="adminLink" href="/admin.html" class="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Admin Panel</a>
+      <a id="logsLink" href="/logs.html" class="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Logs</a>
       <span id="userBadge" class="text-sm font-medium text-slate-500"></span>
       <button id="darkModeToggle" title="Toggle dark mode" class="text-sm font-semibold text-slate-600 hover:text-orange-600 px-2.5 py-2.5 rounded-xl hover:bg-slate-100 transition">🌙</button>
       <button id="logoutBtn" class="text-sm font-semibold text-slate-600 hover:text-rose-600 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition">Logout</button>
@@ -79,7 +80,10 @@ async function loadMe() {
   if (!data.user) { window.location.href = '/login.html'; return; }
   currentUser = data.user;
   document.getElementById('userBadge').textContent = `👤 ${data.user.username}`;
-  if (data.user.role === 'admin') document.getElementById('adminLink').classList.remove('hidden');
+  if (data.user.role === 'admin') {
+    document.getElementById('adminLink').classList.remove('hidden');
+    document.getElementById('logsLink').classList.remove('hidden');
+  }
 }
 
 async function loadClients() {
