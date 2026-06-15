@@ -204,6 +204,24 @@ app.post('/api/users/:id/toggle-enabled', requireAdmin, (req, res) => {
   res.json({ ok: true, enabled: target.enabled });
 });
 
+app.delete('/api/users/:id', requireAdmin, (req, res) => {
+  let users = db.getUsers();
+  const target = users.find((u) => u.id === req.params.id);
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  if (target.id === req.session.user.id) return res.status(400).json({ error: 'You cannot delete your own account' });
+
+  if (target.role === 'admin') {
+    const otherActiveAdmins = users.filter((u) => u.role === 'admin' && u.id !== target.id && u.enabled !== false);
+    if (otherActiveAdmins.length === 0) {
+      return res.status(400).json({ error: 'Cannot delete the last remaining admin account' });
+    }
+  }
+
+  users = users.filter((u) => u.id !== req.params.id);
+  db.saveUsers(users);
+  res.json({ ok: true });
+});
+
 // ================= SETTINGS =================
 app.get('/api/settings', requireAdmin, (req, res) => {
   const settings = db.getSettings();
