@@ -353,6 +353,7 @@ app.delete('/api/clients/:id', requireAdmin, (req, res) => {
   // remove client data
   db.saveChanges(db.getChanges().filter((c) => c.clientId !== req.params.id));
   db.saveSummaries(db.getSummaries().filter((s) => s.clientId !== req.params.id));
+  db.saveDailyContexts(db.getDailyContexts().filter((d) => d.clientId !== req.params.id));
 
   // remove the client's auto-generated login, and unassign from other users
   let users = db.getUsers();
