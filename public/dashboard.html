@@ -221,6 +221,19 @@
     </div>
   </div>
 
+  <!-- DETAIL MODAL (full text view) -->
+  <div id="detailModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h4 id="detailModalTitle" class="font-bold text-slate-900">Details</h4>
+        <button id="detailModalClose" class="text-slate-400 hover:text-slate-600 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="detailModalBody" class="text-sm text-slate-700 break-words max-h-[60vh] overflow-y-auto"></div>
+    </div>
+  </div>
+
 </div>
 
 <script src="app.js"></script>

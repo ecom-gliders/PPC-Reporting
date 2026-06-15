@@ -46,6 +46,54 @@ function fromToBadge(from, to) {
   return `<span class="font-mono text-xs"><span class="text-rose-600 line-through">${escapeHtml(from)}</span>${arrow}<span class="text-emerald-600 font-semibold">${escapeHtml(to)}</span></span>`;
 }
 
+// ---------------- DETAIL MODAL ----------------
+let detailStore = [];
+
+function eyeBtn(idx) {
+  return `<button type="button" class="detail-eye-btn inline-flex items-center justify-center text-slate-400 hover:text-orange-600 transition shrink-0" data-idx="${idx}" title="View full text">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+  </button>`;
+}
+
+function targetCell(text) {
+  const idx = detailStore.push({ title: 'Target', html: `<div class="font-mono text-sm">${escapeHtml(text)}</div>` }) - 1;
+  return `<div class="flex items-center gap-1.5 min-w-0">
+    <span class="truncate" title="${escapeHtml(text)}">${escapeHtml(text)}</span>
+    ${text.length > 40 ? eyeBtn(idx) : ''}
+  </div>`;
+}
+
+function fromToCell(from, to) {
+  const badge = fromToBadge(from, to);
+  if (!badge) return '';
+  const isLong = (from || '').length > 30 || (to || '').length > 30;
+  if (!isLong) return badge;
+  const idx = detailStore.push({
+    title: 'From → To',
+    html: `<div class="space-y-2 font-mono text-sm">
+      <div><span class="text-xs font-semibold text-slate-400 uppercase">From</span><div class="text-rose-600 break-all">${escapeHtml(from)}</div></div>
+      <div><span class="text-xs font-semibold text-slate-400 uppercase">To</span><div class="text-emerald-600 break-all">${escapeHtml(to)}</div></div>
+    </div>`,
+  }) - 1;
+  return `<div class="flex items-center gap-1.5 min-w-0"><div class="truncate">${badge}</div>${eyeBtn(idx)}</div>`;
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.detail-eye-btn');
+  if (!btn) return;
+  const detail = detailStore[Number(btn.dataset.idx)];
+  if (!detail) return;
+  document.getElementById('detailModalTitle').textContent = detail.title;
+  document.getElementById('detailModalBody').innerHTML = detail.html;
+  document.getElementById('detailModal').classList.remove('hidden');
+});
+document.getElementById('detailModalClose').addEventListener('click', () => {
+  document.getElementById('detailModal').classList.add('hidden');
+});
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target.id === 'detailModal') document.getElementById('detailModal').classList.add('hidden');
+});
+
 function shortName(changeLevel, asin) {
   // Try to extract a human friendly suffix after the ASIN
   let s = changeLevel;
@@ -352,6 +400,7 @@ async function loadDailyChanges(date) {
 }
 
 function renderDailyChanges() {
+  detailStore = [];
   const data = lastDailyData;
   const container = document.getElementById('dailyContainer');
   if (!data) return;
@@ -395,8 +444,8 @@ function renderDailyChanges() {
           <td class="py-2.5 px-4 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
-          <td class="py-2.5 px-4 text-sm text-slate-700 border-b border-slate-100 max-w-sm truncate" title="${escapeHtml(shortName(r.changeLevel, r.asin))}">${escapeHtml(shortName(r.changeLevel, r.asin))}</td>
-          <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${fromToBadge(r.from, r.to)}</td>
+          <td class="py-2.5 px-4 text-sm text-slate-700 border-b border-slate-100 max-w-sm">${targetCell(shortName(r.changeLevel, r.asin))}</td>
+          <td class="py-2.5 px-4 max-w-xs border-b border-slate-100">${fromToCell(r.from, r.to)}</td>
         </tr>`
         )
         .join('');
@@ -481,6 +530,7 @@ function renderAsinList() {
 }
 
 async function loadAsinTimeline(asin) {
+  detailStore = [];
   const container = document.getElementById('asinTimeline');
   container.innerHTML = `<p class="text-slate-400 text-sm">Loading...</p>`;
   const data = await fetch(`/api/changes?asin=${encodeURIComponent(asin)}&${cq()}`).then((r) => r.json());
@@ -507,8 +557,8 @@ async function loadAsinTimeline(asin) {
           <td class="py-2.5 px-4 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
-          <td class="py-2.5 px-4 text-sm text-slate-700 border-b border-slate-100 max-w-sm truncate" title="${escapeHtml(shortName(r.changeLevel, r.asin))}">${escapeHtml(shortName(r.changeLevel, r.asin))}</td>
-          <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${fromToBadge(r.from, r.to)}</td>
+          <td class="py-2.5 px-4 text-sm text-slate-700 border-b border-slate-100 max-w-sm">${targetCell(shortName(r.changeLevel, r.asin))}</td>
+          <td class="py-2.5 px-4 max-w-xs border-b border-slate-100">${fromToCell(r.from, r.to)}</td>
         </tr>`
         )
         .join('');
