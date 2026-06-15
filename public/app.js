@@ -487,10 +487,31 @@ function renderDailyChanges() {
 
 // ---------------- ASIN TAB ----------------
 let lastAsinList = [];
+let selectedAsin = null;
 document.getElementById('asinSearch').addEventListener('input', () => renderAsinList());
 
+function asinDateQuery() {
+  const from = document.getElementById('asinFromDate').value;
+  const to = document.getElementById('asinToDate').value;
+  let q = '';
+  if (from) q += `&from=${from}`;
+  if (to) q += `&to=${to}`;
+  return q;
+}
+
+document.getElementById('asinApplyFilterBtn').addEventListener('click', () => {
+  loadAsinList();
+  if (selectedAsin) loadAsinTimeline(selectedAsin);
+});
+document.getElementById('asinClearFilterBtn').addEventListener('click', () => {
+  document.getElementById('asinFromDate').value = '';
+  document.getElementById('asinToDate').value = '';
+  loadAsinList();
+  if (selectedAsin) loadAsinTimeline(selectedAsin);
+});
+
 async function loadAsinList() {
-  let asins = await fetch(`/api/asins?${cq()}`).then((r) => r.json());
+  let asins = await fetch(`/api/asins?${cq()}${asinDateQuery()}`).then((r) => r.json());
   asins = asins.sort((a, b) => {
     if (a.asin === 'UNASSIGNED') return 1;
     if (b.asin === 'UNASSIGNED') return -1;
@@ -524,7 +545,8 @@ function renderAsinList() {
     btn.addEventListener('click', () => {
       list.querySelectorAll('.asin-item').forEach((b) => b.classList.remove('bg-orange-50'));
       btn.classList.add('bg-orange-50');
-      loadAsinTimeline(btn.dataset.asin);
+      selectedAsin = btn.dataset.asin;
+      loadAsinTimeline(selectedAsin);
     })
   );
 }
@@ -533,7 +555,7 @@ async function loadAsinTimeline(asin) {
   detailStore = [];
   const container = document.getElementById('asinTimeline');
   container.innerHTML = `<p class="text-slate-400 text-sm">Loading...</p>`;
-  const data = await fetch(`/api/changes?asin=${encodeURIComponent(asin)}&${cq()}`).then((r) => r.json());
+  const data = await fetch(`/api/changes?asin=${encodeURIComponent(asin)}&${cq()}${asinDateQuery()}`).then((r) => r.json());
   const rows = data.grouped[asin] || [];
 
   if (!rows.length) {

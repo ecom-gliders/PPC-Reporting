@@ -107,7 +107,14 @@ app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'public',
 // everything else requires login
 app.use(requireAuth);
 app.get('/admin.html', requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/logs.html', requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'logs.html')));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ================= ADMIN: UPLOAD LOGS =================
+app.get('/api/upload-logs', requireAdmin, (req, res) => {
+  const logs = db.getUploadLogs().slice().sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  res.json(logs);
+});
 
 // ================= ADMIN: USER MANAGEMENT =================
 app.get('/api/users', requireAdmin, (req, res) => {
@@ -435,6 +442,23 @@ app.post('/api/upload', requireWriteAccess, upload.single('file'), (req, res) =>
       db.saveDailyContexts(dailyContexts);
     }
 
+    const client = db.getClients().find((c) => c.id === clientId);
+    const uploadLogs = db.getUploadLogs();
+    uploadLogs.push({
+      id: crypto.randomUUID(),
+      clientId,
+      clientName: client ? client.name : clientId,
+      uploadedBy: req.session.user.username,
+      fileName: req.file.originalname,
+      context,
+      datesInUpload,
+      totalRows: parsedRows.length,
+      added,
+      skippedDuplicates: parsedRows.length - added,
+      uploadedAt: new Date().toISOString(),
+    });
+    db.saveUploadLogs(uploadLogs);
+
     res.json({ ok: true, totalRows: parsedRows.length, added, skippedDuplicates: parsedRows.length - added });
   } catch (err) {
     console.error(err);
@@ -477,7 +501,10 @@ app.get('/api/changes', requireClientAccess, (req, res) => {
 });
 
 app.get('/api/asins', requireClientAccess, (req, res) => {
-  const changes = db.getChanges().filter((c) => c.clientId === req.clientId);
+  const { from, to } = req.query;
+  let changes = db.getChanges().filter((c) => c.clientId === req.clientId);
+  if (from) changes = changes.filter((c) => c.date >= from);
+  if (to) changes = changes.filter((c) => c.date <= to);
   const counts = {};
   for (const c of changes) counts[c.asin] = (counts[c.asin] || 0) + 1;
   const result = Object.entries(counts)

@@ -7,7 +7,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-const KEYS = ['changes', 'summaries', 'users', 'clients', 'settings', 'daily_context'];
+const KEYS = ['changes', 'summaries', 'users', 'clients', 'settings', 'daily_context', 'upload_logs'];
 
 const cache = {
   changes: [],
@@ -16,6 +16,7 @@ const cache = {
   clients: [],
   settings: {},
   daily_context: [],
+  upload_logs: [],
 };
 
 function save(key, data) {
@@ -73,4 +74,7 @@ module.exports = {
   saveSettings: (data) => save('settings', data),
   getDailyContexts: () => cache.daily_context,
   saveDailyContexts: (data) => save('daily_context', data),
+
+  getUploadLogs: () => cache.upload_logs,
+  saveUploadLogs: (data) => save('upload_logs', data),
 };
