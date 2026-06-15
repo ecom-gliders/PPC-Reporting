@@ -639,24 +639,66 @@ async function loadSummaries() {
     return;
   }
 
-  list.innerHTML = summaries.map(renderSummaryCard).join('');
+  list.innerHTML = summaries.map((s, i) => renderSummaryCard(s, i === 0)).join('');
+  attachSummaryCardHandlers();
 }
 
-function renderSummaryCard(s) {
+function renderSummaryCard(s, expanded) {
   return `
-    <div class="bg-white rounded-xl border-2 border-slate-300 shadow-sm p-6 fade-in">
-      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+    <div class="bg-white rounded-xl border-2 border-slate-300 shadow-sm fade-in summary-card" data-expanded="${expanded ? '1' : '0'}">
+      <div class="flex items-center justify-between mb-0 flex-wrap gap-2 p-6 cursor-pointer summary-card-header">
         <h4 class="font-bold text-slate-900">📊 Optimization Summary: ${formatDate(s.from)} – ${formatDate(s.to)}</h4>
         <span class="text-xs text-slate-400">Generated ${new Date(s.generatedAt).toLocaleString()}</span>
       </div>
-      <div class="flex gap-3 mb-4 text-xs text-slate-500">
-        <span class="bg-slate-100 rounded-full px-3 py-1">${s.totalChanges} changes analyzed</span>
-        <span class="bg-slate-100 rounded-full px-3 py-1">${s.asinCount} ASINs</span>
-      </div>
-      <div class="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-slate-800 prose-h2:text-base prose-h3:text-sm prose-li:text-slate-600">
-        ${marked.parse(s.summary)}
+      <div class="summary-card-body ${expanded ? '' : 'hidden'} px-6 pb-6">
+        <div class="flex gap-3 mb-4 text-xs text-slate-500">
+          <span class="bg-slate-100 rounded-full px-3 py-1">${s.totalChanges} changes analyzed</span>
+          <span class="bg-slate-100 rounded-full px-3 py-1">${s.asinCount} ASINs</span>
+        </div>
+        <div class="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-slate-800 prose-h2:text-base prose-h3:text-sm prose-li:text-slate-600">
+          ${marked.parse(s.summary)}
+        </div>
       </div>
     </div>`;
+}
+
+function attachSummaryCardHandlers() {
+  document.querySelectorAll('.summary-card-header').forEach((header) => {
+    header.addEventListener('click', () => {
+      const card = header.closest('.summary-card');
+      const body = card.querySelector('.summary-card-body');
+      const wasExpanded = card.dataset.expanded === '1';
+      const allCards = Array.from(document.querySelectorAll('.summary-card'));
+      const allExpanded = allCards.every((c) => c.dataset.expanded === '1');
+
+      if (wasExpanded && allExpanded) {
+        // second click on the already-open one with everything open -> collapse all except this
+        allCards.forEach((c) => {
+          if (c !== card) {
+            c.dataset.expanded = '0';
+            c.querySelector('.summary-card-body').classList.add('hidden');
+          }
+        });
+        return;
+      }
+
+      if (wasExpanded) {
+        // clicking the open one again -> expand all
+        allCards.forEach((c) => {
+          c.dataset.expanded = '1';
+          c.querySelector('.summary-card-body').classList.remove('hidden');
+        });
+        return;
+      }
+
+      // collapsed -> open this one, close all others (accordion)
+      allCards.forEach((c) => {
+        const open = c === card;
+        c.dataset.expanded = open ? '1' : '0';
+        c.querySelector('.summary-card-body').classList.toggle('hidden', !open);
+      });
+    });
+  });
 }
 
 document.getElementById('filterSummaryBtn').addEventListener('click', () => {
@@ -665,15 +707,17 @@ document.getElementById('filterSummaryBtn').addEventListener('click', () => {
   const list = document.getElementById('summaryList');
 
   if (!from || !to) {
-    list.innerHTML = cachedSummaries.map(renderSummaryCard).join('') || `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">
+    list.innerHTML = cachedSummaries.map((s, i) => renderSummaryCard(s, i === 0)).join('') || `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">
       No AI summaries generated yet.
     </div>`;
+    attachSummaryCardHandlers();
     return;
   }
 
   const matches = cachedSummaries.filter((s) => s.from === from && s.to === to);
   if (matches.length) {
-    list.innerHTML = matches.map(renderSummaryCard).join('');
+    list.innerHTML = matches.map((s, i) => renderSummaryCard(s, i === 0)).join('');
+    attachSummaryCardHandlers();
   } else {
     list.innerHTML = `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">
       No summary found for this date range. Summaries are generated automatically every Friday.
