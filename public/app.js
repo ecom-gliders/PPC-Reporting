@@ -666,34 +666,12 @@ function attachSummaryCardHandlers() {
   document.querySelectorAll('.summary-card-header').forEach((header) => {
     header.addEventListener('click', () => {
       const card = header.closest('.summary-card');
-      const body = card.querySelector('.summary-card-body');
       const wasExpanded = card.dataset.expanded === '1';
       const allCards = Array.from(document.querySelectorAll('.summary-card'));
-      const allExpanded = allCards.every((c) => c.dataset.expanded === '1');
 
-      if (wasExpanded && allExpanded) {
-        // second click on the already-open one with everything open -> collapse all except this
-        allCards.forEach((c) => {
-          if (c !== card) {
-            c.dataset.expanded = '0';
-            c.querySelector('.summary-card-body').classList.add('hidden');
-          }
-        });
-        return;
-      }
-
-      if (wasExpanded) {
-        // clicking the open one again -> expand all
-        allCards.forEach((c) => {
-          c.dataset.expanded = '1';
-          c.querySelector('.summary-card-body').classList.remove('hidden');
-        });
-        return;
-      }
-
-      // collapsed -> open this one, close all others (accordion)
+      // strict accordion: only one card open at a time
       allCards.forEach((c) => {
-        const open = c === card;
+        const open = !wasExpanded && c === card;
         c.dataset.expanded = open ? '1' : '0';
         c.querySelector('.summary-card-body').classList.toggle('hidden', !open);
       });
