@@ -32,14 +32,10 @@ function buildWeeklyReportEmailHtml({ clientName, from, to, totalChanges, asinCo
         <p style="margin: 0 0 20px; font-size: 14px; color: #64748b; line-height: 1.6;">
           Hi <strong>${clientName}</strong>, the optimization summary for <strong>${formatDateLong(from)} – ${formatDateLong(to)}</strong> has been generated and is now available in your dashboard.
         </p>
-        <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-          <div style="flex: 1; background: #fff7ed; border-radius: 12px; padding: 14px; text-align: center;">
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+          <div style="background: #fff7ed; border-radius: 12px; padding: 14px 28px; text-align: center;">
             <div style="font-size: 24px; font-weight: 800; color: #ea580c;">${totalChanges}</div>
             <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Total Changes</div>
-          </div>
-          <div style="flex: 1; background: #eff6ff; border-radius: 12px; padding: 14px; text-align: center;">
-            <div style="font-size: 24px; font-weight: 800; color: #2563eb;">${asinCount}</div>
-            <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">ASINs Touched</div>
           </div>
         </div>
         <div style="text-align: center;">
@@ -66,6 +62,22 @@ async function sendWeeklyReportEmail({ to, clientName, from, to: toDate, totalCh
     subject: `Your Weekly PPC Report from EcomGliders is Ready ✅`,
     html,
   });
+
+  // Internal notification to info@ecomgliders.com
+  try {
+    await transport.sendMail({
+      from: settings.smtpFrom || settings.smtpUser,
+      to: 'info@ecomgliders.com',
+      subject: `✅ Weekly Report Sent to ${clientName}`,
+      html: `<div style="font-family:sans-serif;padding:20px;color:#0f172a;">
+        <p>Weekly PPC report for <strong>${clientName}</strong> has been sent successfully to <strong>${to}</strong>.</p>
+        <p>Period: <strong>${from} – ${toDate}</strong> &nbsp;|&nbsp; Total Changes: <strong>${totalChanges}</strong></p>
+        <p style="color:#64748b;font-size:12px;">This is an automated internal notification from EcomGliders PPC Dashboard.</p>
+      </div>`,
+    });
+  } catch (err) {
+    console.error('[email] Failed to send internal notification:', err.message);
+  }
 
   return { sent: true };
 }

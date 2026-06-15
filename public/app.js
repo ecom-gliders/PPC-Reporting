@@ -469,7 +469,7 @@ function renderDailyChanges() {
             <colgroup>
               <col class="w-[80px]" />
               <col class="w-[110px]" />
-              <col class="w-[140px]" />
+              <col class="w-[210px]" />
               <col />
               <col class="w-[220px]" />
             </colgroup>
@@ -602,7 +602,7 @@ async function loadAsinTimeline(asin) {
             <colgroup>
               <col class="w-[80px]" />
               <col class="w-[110px]" />
-              <col class="w-[140px]" />
+              <col class="w-[210px]" />
               <col />
               <col class="w-[220px]" />
             </colgroup>
