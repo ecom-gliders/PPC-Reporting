@@ -130,6 +130,8 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     if (btn.dataset.tab === 'asin') loadAsinList();
     if (btn.dataset.tab === 'summary') loadSummaries();
     if (btn.dataset.tab === 'graphs') loadGraphs();
+
+    localStorage.setItem(`activeTab_${CLIENT_ID}`, btn.dataset.tab);
   });
 });
 
@@ -725,8 +727,9 @@ loadMe();
 loadClientName();
 refreshAll();
 
-// If the link includes ?tab=summary (e.g. from a report email), open that tab directly
-const REQUESTED_TAB = new URLSearchParams(window.location.search).get('tab');
+// If the link includes ?tab=summary (e.g. from a report email), open that tab directly.
+// Otherwise restore whichever tab the user was last viewing for this client.
+const REQUESTED_TAB = new URLSearchParams(window.location.search).get('tab') || localStorage.getItem(`activeTab_${CLIENT_ID}`);
 if (REQUESTED_TAB) {
   const tabBtn = document.querySelector(`.tab-btn[data-tab="${REQUESTED_TAB}"]`);
   if (tabBtn) tabBtn.click();

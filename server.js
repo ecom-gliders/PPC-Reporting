@@ -594,10 +594,31 @@ app.get('/api/summaries', requireClientAccess, (req, res) => {
   res.json(summaries.sort((a, b) => (a.generatedAt < b.generatedAt ? 1 : a.generatedAt > b.generatedAt ? -1 : 0)));
 });
 
+// Records an AI summary generation event in the upload logs
+function logSummaryGeneration(clientId, summary, triggeredBy) {
+  const client = db.getClients().find((c) => c.id === clientId);
+  const uploadLogs = db.getUploadLogs();
+  uploadLogs.push({
+    id: crypto.randomUUID(),
+    type: 'summary',
+    clientId,
+    clientName: client ? client.name : clientId,
+    uploadedBy: triggeredBy,
+    fileName: `AI Summary (${summary.from} to ${summary.to})`,
+    context: `${summary.totalChanges} changes analyzed across ${summary.asinCount} ASINs`,
+    totalRows: summary.totalChanges,
+    added: summary.asinCount,
+    skippedDuplicates: 0,
+    uploadedAt: summary.generatedAt,
+  });
+  db.saveUploadLogs(uploadLogs);
+}
+
 app.post('/api/summaries/generate', requireClientAccess, requireAdmin, async (req, res) => {
   try {
     const { from, to, context } = req.body || {};
     const summary = await generateWeeklySummary({ clientId: req.clientId, from, to, context });
+    logSummaryGeneration(req.clientId, summary, req.session.user.username);
     await emailWeeklyReport(req.clientId, summary);
     res.json(summary);
   } catch (err) {
@@ -640,6 +661,7 @@ cron.schedule('0 2 * * 6', async () => {
   for (const client of clients) {
     try {
       const summary = await generateWeeklySummary({ clientId: client.id });
+      logSummaryGeneration(client.id, summary, 'Automated (cron)');
       await emailWeeklyReport(client.id, summary);
       console.log(`[cron] Weekly summary generated for client "${client.name}".`);
     } catch (err) {
