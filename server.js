@@ -245,6 +245,7 @@ app.get('/api/settings', requireAdmin, (req, res) => {
   // mask the key so it isn't fully exposed once saved
   const masked = key ? `${key.slice(0, 3)}${'•'.repeat(10)}${key.slice(-4)}` : '';
   const smtpPass = settings.smtpPass || '';
+  const resendKey = settings.resendApiKey || '';
   res.json({
     openaiApiKeySet: !!key,
     openaiApiKeyMasked: masked,
@@ -254,14 +255,17 @@ app.get('/api/settings', requireAdmin, (req, res) => {
     smtpFrom: settings.smtpFrom || '',
     smtpPassSet: !!smtpPass,
     smtpPassMasked: smtpPass ? '•'.repeat(10) : '',
+    resendApiKeySet: !!resendKey,
+    resendApiKeyMasked: resendKey ? `${resendKey.slice(0, 5)}${'•'.repeat(10)}${resendKey.slice(-4)}` : '',
   });
 });
 
 app.post('/api/settings', requireAdmin, (req, res) => {
-  const { openaiApiKey, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom } = req.body || {};
+  const { openaiApiKey, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, resendApiKey } = req.body || {};
 
   const settings = db.getSettings();
   if (typeof openaiApiKey === 'string') settings.openaiApiKey = openaiApiKey.trim();
+  if (typeof resendApiKey === 'string' && resendApiKey.trim()) settings.resendApiKey = resendApiKey.trim();
   if (typeof smtpHost === 'string') settings.smtpHost = smtpHost.trim();
   if (typeof smtpPort === 'string' || typeof smtpPort === 'number') settings.smtpPort = String(smtpPort).trim();
   if (typeof smtpUser === 'string') settings.smtpUser = smtpUser.trim();
@@ -650,20 +654,20 @@ async function emailWeeklyReport(clientId, summary) {
 // ================= UTILITY =================
 // Test SMTP connection and send a test email
 app.post('/api/test-email', requireAdmin, async (req, res) => {
-  const { getTransport } = require('./email');
-  const transport = getTransport();
-  if (!transport) return res.status(400).json({ error: 'SMTP not configured' });
+  const { Resend } = require('resend');
+  const settings = db.getSettings();
+  const apiKey = (settings.resendApiKey || process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return res.status(400).json({ error: 'Resend API key not configured' });
   try {
-    await transport.verify();
-    const settings = db.getSettings();
-    const to = (req.body && req.body.to) || settings.smtpUser;
-    await transport.sendMail({
-      from: settings.smtpFrom || settings.smtpUser,
+    const resend = new Resend(apiKey);
+    const to = (req.body && req.body.to) || 'info@ecomgliders.com';
+    const result = await resend.emails.send({
+      from: 'PPC Reports <ppcreporting@ecomgliders.com>',
       to,
-      subject: 'PPC Dashboard — SMTP Test',
-      html: '<p>SMTP is working correctly from the PPC Dashboard.</p>',
+      subject: 'PPC Dashboard — Email Test ✅',
+      html: '<p>Email delivery is working correctly from the EcomGliders PPC Dashboard.</p>',
     });
-    res.json({ ok: true, sentTo: to });
+    res.json({ ok: true, sentTo: to, id: result.data?.id, error: result.error });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

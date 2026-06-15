@@ -1,17 +1,14 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const db = require('./db');
 
-function getTransport() {
-  const settings = db.getSettings();
-  const { smtpHost, smtpPort, smtpUser, smtpPass } = settings;
-  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) return null;
+const FROM_ADDRESS = 'PPC Reports <ppcreporting@ecomgliders.com>';
+const INTERNAL_NOTIFY = 'info@ecomgliders.com';
 
-  return nodemailer.createTransport({
-    host: smtpHost,
-    port: Number(smtpPort),
-    secure: Number(smtpPort) === 465,
-    auth: { user: smtpUser, pass: smtpPass },
-  });
+function getResend() {
+  const settings = db.getSettings();
+  const apiKey = (settings.resendApiKey || process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return null;
+  return new Resend(apiKey);
 }
 
 function formatDateLong(iso) {
@@ -19,7 +16,7 @@ function formatDateLong(iso) {
   return d.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function buildWeeklyReportEmailHtml({ clientName, from, to, totalChanges, asinCount, reportUrl }) {
+function buildWeeklyReportEmailHtml({ clientName, from, toDate, totalChanges, reportUrl }) {
   return `
   <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 32px 16px; margin: 0;">
     <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
@@ -30,7 +27,7 @@ function buildWeeklyReportEmailHtml({ clientName, from, to, totalChanges, asinCo
       <div style="padding: 32px;">
         <h2 style="margin: 0 0 8px; font-size: 18px; color: #0f172a;">Your weekly PPC report from EcomGliders is ready! 🚀</h2>
         <p style="margin: 0 0 20px; font-size: 14px; color: #64748b; line-height: 1.6;">
-          Hi <strong>${clientName}</strong>, the optimization summary for <strong>${formatDateLong(from)} – ${formatDateLong(to)}</strong> has been generated and is now available in your dashboard.
+          Hi <strong>${clientName}</strong>, the optimization summary for <strong>${formatDateLong(from)} – ${formatDateLong(toDate)}</strong> has been generated and is now available in your dashboard.
         </p>
         <div style="display: flex; justify-content: center; margin-bottom: 24px;">
           <div style="background: #fff7ed; border-radius: 12px; padding: 14px 28px; text-align: center;">
@@ -50,24 +47,23 @@ function buildWeeklyReportEmailHtml({ clientName, from, to, totalChanges, asinCo
 }
 
 async function sendWeeklyReportEmail({ to, clientName, from, to: toDate, totalChanges, asinCount, reportUrl }) {
-  const transport = getTransport();
-  if (!transport || !to) return { sent: false };
+  const resend = getResend();
+  if (!resend || !to) return { sent: false };
 
-  const settings = db.getSettings();
-  const html = buildWeeklyReportEmailHtml({ clientName, from, to: toDate, totalChanges, asinCount, reportUrl });
+  const html = buildWeeklyReportEmailHtml({ clientName, from, toDate, totalChanges, reportUrl });
 
-  await transport.sendMail({
-    from: settings.smtpFrom || settings.smtpUser,
+  await resend.emails.send({
+    from: FROM_ADDRESS,
     to,
     subject: `Your Weekly PPC Report from EcomGliders is Ready ✅`,
     html,
   });
 
-  // Internal notification to info@ecomgliders.com
+  // Internal notification
   try {
-    await transport.sendMail({
-      from: settings.smtpFrom || settings.smtpUser,
-      to: 'info@ecomgliders.com',
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: INTERNAL_NOTIFY,
       subject: `✅ Weekly Report Sent to ${clientName}`,
       html: `<div style="font-family:sans-serif;padding:20px;color:#0f172a;">
         <p>Weekly PPC report for <strong>${clientName}</strong> has been sent successfully to <strong>${to}</strong>.</p>
@@ -82,4 +78,7 @@ async function sendWeeklyReportEmail({ to, clientName, from, to: toDate, totalCh
   return { sent: true };
 }
 
-module.exports = { sendWeeklyReportEmail, getTransport };
+// Keep getTransport export so test-email endpoint still works
+function getTransport() { return null; }
+
+module.exports = { sendWeeklyReportEmail, getTransend: getResend, getTransport };
