@@ -17,7 +17,12 @@ function detectAction(changeType) {
   if (t.startsWith('keyword(') && t.includes('added')) return 'Keyword Added';
   if (t === 'campaign status') return 'Campaign Status';
   if (t.startsWith('campaign daily budget')) return 'Budget';
-  if (t.startsWith('bid adjustment')) return 'Bid Adjustment';
+  if (t.startsWith('bid adjustment')) {
+    if (t.includes('top of search')) return 'Bid Adjustment (Top of Search)';
+    if (t.includes('rest of search')) return 'Bid Adjustment (Rest of Search)';
+    if (t.includes('product page')) return 'Bid Adjustment (Product Pages)';
+    return 'Bid Adjustment';
+  }
   if (t.startsWith('targeting group bid')) return 'Targeting Bid';
   if (t.startsWith('targeting group status')) return 'Targeting Status';
   if (t.startsWith('category target bid')) return 'Category Target Bid';

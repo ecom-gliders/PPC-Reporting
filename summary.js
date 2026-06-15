@@ -31,7 +31,8 @@ function extractCampaignName(changeLevel) {
   return m ? m[1].trim() : null;
 }
 
-const BID_ACTIONS = new Set(['Keyword Bid', 'Targeting Bid', 'Category Target Bid', 'Bid Adjustment']);
+const BID_ACTIONS = new Set(['Keyword Bid', 'Targeting Bid', 'Category Target Bid']);
+const isPlacementBidAdjustment = (action) => action.startsWith('Bid Adjustment');
 
 // Parses values like "$1.60", "20%", "1.6" into a plain number, or null if not numeric
 function parseNumeric(val) {
@@ -94,11 +95,11 @@ function buildAsinStats(changes) {
         break;
     }
 
-    if (BID_ACTIONS.has(c.action)) {
+    if (BID_ACTIONS.has(c.action) || isPlacementBidAdjustment(c.action)) {
       const fromNum = parseNumeric(c.from);
       const toNum = parseNumeric(c.to);
       if (fromNum !== null && toNum !== null) {
-        if (c.action === 'Bid Adjustment') {
+        if (isPlacementBidAdjustment(c.action)) {
           if (toNum > fromNum) s.placementAdjustmentsIncreased++;
           else if (toNum < fromNum) s.placementAdjustmentsDecreased++;
         } else {
