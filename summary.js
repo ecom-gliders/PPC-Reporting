@@ -3,10 +3,15 @@ const OpenAI = require('openai');
 const db = require('./db');
 
 function getDefaultWeekRange() {
-  // last 7 days ending today
-  const to = new Date();
-  const from = new Date();
-  from.setDate(from.getDate() - 6);
+  // most recently completed Monday-Friday work week
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+  // days since the most recent Friday (if today is Friday or earlier in the week, go back to last week's Friday)
+  const daysSinceFriday = (day + 2) % 7; // Fri->0, Sat->1, Sun->2, Mon->3, Tue->4, Wed->5, Thu->6
+  const to = new Date(now);
+  to.setDate(to.getDate() - daysSinceFriday);
+  const from = new Date(to);
+  from.setDate(from.getDate() - 4);
   const iso = (d) => d.toISOString().slice(0, 10);
   return { from: iso(from), to: iso(to) };
 }

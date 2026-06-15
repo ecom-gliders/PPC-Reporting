@@ -21,6 +21,7 @@ if (!process.env.SESSION_SECRET) {
   console.warn('WARNING: SESSION_SECRET env var not set — using an insecure default. Set SESSION_SECRET in .env for production.');
 }
 
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 app.use(
@@ -29,7 +30,12 @@ app.use(
     secret: process.env.SESSION_SECRET || 'ppc-change-history-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 },
+    rolling: true,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    },
   })
 );
 
@@ -613,7 +619,7 @@ async function emailWeeklyReport(clientId, summary) {
       to: summary.to,
       totalChanges: summary.totalChanges,
       asinCount: summary.asinCount,
-      reportUrl: `${APP_URL}/dashboard.html?clientId=${clientId}`,
+      reportUrl: `${APP_URL}/dashboard.html?clientId=${clientId}&tab=summary`,
     });
   } catch (err) {
     console.error(`[email] Failed to send weekly report to ${client.email}:`, err.message);

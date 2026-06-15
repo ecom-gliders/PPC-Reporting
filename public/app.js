@@ -724,3 +724,10 @@ async function refreshAll() {
 loadMe();
 loadClientName();
 refreshAll();
+
+// If the link includes ?tab=summary (e.g. from a report email), open that tab directly
+const REQUESTED_TAB = new URLSearchParams(window.location.search).get('tab');
+if (REQUESTED_TAB) {
+  const tabBtn = document.querySelector(`.tab-btn[data-tab="${REQUESTED_TAB}"]`);
+  if (tabBtn) tabBtn.click();
+}
