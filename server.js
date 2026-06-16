@@ -621,11 +621,23 @@ function logSummaryGeneration(clientId, summary, triggeredBy) {
 app.post('/api/summaries/:id/send-email', requireAdmin, async (req, res) => {
   const summary = db.getSummaries().find((s) => s.id === req.params.id);
   if (!summary) return res.status(404).json({ error: 'Summary not found' });
+  const client = db.getClients().find((c) => c.id === summary.clientId);
+  if (!client || !client.email) return res.status(400).json({ error: 'Client has no email set', client });
   try {
-    await emailWeeklyReport(summary.clientId, summary);
-    res.json({ ok: true });
+    const { sendWeeklyReportEmail } = require('./email');
+    const APP_URL_LOCAL = process.env.APP_URL || 'https://ppc-reporting.onrender.com';
+    const result = await sendWeeklyReportEmail({
+      to: client.email,
+      clientName: client.name,
+      from: summary.from,
+      to: summary.to,
+      totalChanges: summary.totalChanges,
+      asinCount: summary.asinCount,
+      reportUrl: `${APP_URL_LOCAL}/dashboard.html?clientId=${summary.clientId}&tab=summary`,
+    });
+    res.json({ ok: true, sentTo: client.email, result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
 
