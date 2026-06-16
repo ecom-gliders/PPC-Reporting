@@ -618,6 +618,15 @@ function logSummaryGeneration(clientId, summary, triggeredBy) {
   db.saveUploadLogs(uploadLogs);
 }
 
+app.delete('/api/summaries/:id', requireAdmin, (req, res) => {
+  const summaries = db.getSummaries();
+  const idx = summaries.findIndex((s) => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Summary not found' });
+  summaries.splice(idx, 1);
+  db.saveSummaries(summaries);
+  res.json({ ok: true });
+});
+
 app.post('/api/summaries/:id/send-email', requireAdmin, async (req, res) => {
   const summary = db.getSummaries().find((s) => s.id === req.params.id);
   if (!summary) return res.status(404).json({ error: 'Summary not found' });
