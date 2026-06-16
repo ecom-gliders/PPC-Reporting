@@ -46,7 +46,7 @@ function buildWeeklyReportEmailHtml({ clientName, from, toDate, totalChanges, re
   </div>`;
 }
 
-async function sendWeeklyReportEmail({ to, clientName, from, to: toDate, totalChanges, asinCount, reportUrl }) {
+async function sendWeeklyReportEmail({ to, clientName, from, toDate, totalChanges, asinCount, reportUrl }) {
   const resend = getResend();
   if (!resend || !to) return { sent: false };
 
