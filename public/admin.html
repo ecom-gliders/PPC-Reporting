@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -40,9 +40,9 @@
       <p class="hidden sm:block text-sm text-slate-400 truncate">Manage users &amp; access</p>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <a href="/clients.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">â† Clients</a>
+      <a href="/clients.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">?� Clients</a>
       <div class="hidden sm:block h-5 w-px bg-slate-700"></div>
-      <button id="darkModeToggle" title="Toggle dark mode" class="text-xs font-semibold text-slate-300 hover:text-white px-2.5 py-2 rounded-lg hover:bg-white/10 transition">ðŸŒ™</button>
+      <button id="darkModeToggle" title="Toggle dark mode" class="text-xs font-semibold text-slate-300 hover:text-white px-2.5 py-2 rounded-lg hover:bg-white/10 transition">??</button>
       <button id="logoutBtn" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">Logout</button>
     </div>
   </div>
@@ -87,7 +87,7 @@
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">SMTP Password</label>
-        <input id="smtpPass" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="off" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-orange-400 focus:outline-none" />
+        <input id="smtpPass" type="password" placeholder="........" autocomplete="off" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-orange-400 focus:outline-none" />
       </div>
       <div class="sm:col-span-2">
         <label class="block text-xs font-semibold text-slate-500 mb-1">"From" Email Address</label>
@@ -258,13 +258,13 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to save settings');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.textContent = 'âœ… API key saved.';
+    msg.textContent = '? API key saved.';
     msg.classList.remove('hidden');
     document.getElementById('openaiApiKey').value = '';
     await loadSettings();
   } catch (err) {
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
-    msg.textContent = 'âŒ ' + err.message;
+    msg.textContent = '�O ' + err.message;
     msg.classList.remove('hidden');
   }
 });
@@ -289,13 +289,13 @@ document.getElementById('smtpForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to save email settings');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.textContent = 'âœ… Email settings saved.';
+    msg.textContent = '? Email settings saved.';
     msg.classList.remove('hidden');
     document.getElementById('smtpPass').value = '';
     await loadSettings();
   } catch (err) {
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
-    msg.textContent = 'âŒ ' + err.message;
+    msg.textContent = '�O ' + err.message;
     msg.classList.remove('hidden');
   }
 });
@@ -308,7 +308,7 @@ function wirePasswordToggles(container) {
       const closed = btn.querySelector('.eye-closed');
       const showing = span.dataset.shown === 'true';
       if (showing) {
-        span.textContent = 'â€¢'.repeat(span.dataset.pw.length);
+        span.textContent = '.'.repeat(span.dataset.pw.length);
         span.dataset.shown = 'false';
         open.classList.remove('hidden');
         closed.classList.add('hidden');
@@ -337,16 +337,16 @@ async function loadClients() {
         <td class="py-2.5 px-2.5 text-sm font-semibold text-slate-800 border-b border-slate-100">${escapeHtml(c.name)}</td>
         <td class="py-2.5 px-2.5 text-sm border-b border-slate-100">
           <div class="flex items-center gap-2">
-            <span class="email-text font-mono text-slate-600">${escapeHtml(c.email || 'â€”')}</span>
+            <span class="email-text font-mono text-slate-600">${escapeHtml(c.email || '�?"')}</span>
             <button type="button" data-id="${c.id}" data-email="${escapeHtml(c.email || '')}" class="edit-email-btn text-slate-400 hover:text-slate-600 transition" title="Edit notification email">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
           </div>
         </td>
-        <td class="py-2.5 px-2.5 text-sm font-mono text-slate-600 border-b border-slate-100">${escapeHtml(c.loginUsername || 'â€”')}</td>
+        <td class="py-2.5 px-2.5 text-sm font-mono text-slate-600 border-b border-slate-100">${escapeHtml(c.loginUsername || '�?"')}</td>
         <td class="py-2.5 px-2.5 text-sm border-b border-slate-100">
           <div class="flex items-center gap-2">
-            <span class="pw-text font-mono text-slate-600 tracking-wider" data-pw="${escapeHtml(c.loginPassword || '')}">${'â€¢'.repeat((c.loginPassword || 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢').length)}</span>
+            <span class="pw-text font-mono text-slate-600 tracking-wider" data-pw="${escapeHtml(c.loginPassword || '')}">${'.'.repeat((c.loginPassword || '........').length)}</span>
             <button type="button" class="pw-toggle-btn text-slate-400 hover:text-slate-600 transition" title="Show/hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4.477 0 8.268 2.943 9.542 7-.5 1.59-1.395 3.027-2.567 4.176M6.18 6.18A10.45 10.45 0 002.458 12c1.274 4.057 5.065 7 9.542 7 1.314 0 2.567-.246 3.708-.69"/></svg>
@@ -383,7 +383,7 @@ async function loadClients() {
   // populate the "new user" client checkboxes
   const box = document.getElementById('newUserClients');
   if (!allClients.length) {
-    box.innerHTML = `<span class="text-xs text-slate-400">No clients yet â€” add one above.</span>`;
+    box.innerHTML = `<span class="text-xs text-slate-400">No clients yet �?" add one above.</span>`;
   } else {
     box.innerHTML = allClients
       .map((c) => `
@@ -448,13 +448,13 @@ document.getElementById('addClientForm').addEventListener('submit', async (e) =>
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to add client');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.innerHTML = `âœ… Client "${escapeHtml(data.name)}" added. Login: <strong class="font-mono">${escapeHtml(data.loginUsername)}</strong> / <strong class="font-mono">${escapeHtml(data.loginPassword)}</strong>`;
+    msg.innerHTML = `? Client "${escapeHtml(data.name)}" added. Login: <strong class="font-mono">${escapeHtml(data.loginUsername)}</strong> / <strong class="font-mono">${escapeHtml(data.loginPassword)}</strong>`;
     msg.classList.remove('hidden');
     document.getElementById('addClientForm').reset();
     await loadClients();
   } catch (err) {
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
-    msg.textContent = 'âŒ ' + err.message;
+    msg.textContent = '�O ' + err.message;
     msg.classList.remove('hidden');
   }
 });
@@ -525,13 +525,13 @@ async function loadUsers() {
       const pw = u.password || '';
       const pwCell = pw
         ? `<div class="flex items-center gap-2">
-            <span class="pw-text font-mono text-slate-600 tracking-wider" data-pw="${escapeHtml(pw)}">${'â€¢'.repeat(pw.length)}</span>
+            <span class="pw-text font-mono text-slate-600 tracking-wider" data-pw="${escapeHtml(pw)}">${'.'.repeat(pw.length)}</span>
             <button type="button" class="pw-toggle-btn text-slate-400 hover:text-slate-600 transition" title="Show/hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4.477 0 8.268 2.943 9.542 7-.5 1.59-1.395 3.027-2.567 4.176M6.18 6.18A10.45 10.45 0 002.458 12c1.274 4.057 5.065 7 9.542 7 1.314 0 2.567-.246 3.708-.69"/></svg>
             </button>
           </div>`
-        : `<span class="text-xs text-slate-400">â€”</span>`;
+        : `<span class="text-xs text-slate-400">�?"</span>`;
       return `
       <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-orange-50/70 transition-colors">
         <td class="py-2.5 px-2.5 text-sm font-semibold text-slate-800 border-b border-slate-100">${escapeHtml(u.username)}</td>
@@ -612,23 +612,23 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to add user');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.textContent = `âœ… User "${data.username}" added successfully.`;
+    msg.textContent = `? User "${data.username}" added successfully.`;
     msg.classList.remove('hidden');
     document.getElementById('addUserForm').reset();
     await loadUsers();
   } catch (err) {
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
-    msg.textContent = 'âŒ ' + err.message;
+    msg.textContent = '�O ' + err.message;
     msg.classList.remove('hidden');
   }
 });
 
 const darkModeToggle = document.getElementById('darkModeToggle');
-darkModeToggle.textContent = document.documentElement.classList.contains('dark') ? 'â˜€ï¸' : 'ðŸŒ™';
+darkModeToggle.textContent = document.documentElement.classList.contains('dark') ? '�~?️' : '??';
 darkModeToggle.addEventListener('click', () => {
   const isDark = document.documentElement.classList.toggle('dark');
   localStorage.setItem('darkMode', isDark ? '1' : '0');
-  darkModeToggle.textContent = isDark ? 'â˜€ï¸' : 'ðŸŒ™';
+  darkModeToggle.textContent = isDark ? '�~?️' : '??';
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {

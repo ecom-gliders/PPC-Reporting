@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -39,9 +39,9 @@
       <p class="hidden sm:block text-sm text-slate-400 truncate">Who uploaded what, when, and why</p>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <a id="backLink" href="/clients.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">â† Dashboard</a>
+      <a id="backLink" href="/clients.html" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">?� Dashboard</a>
       <div class="hidden sm:block h-5 w-px bg-slate-700"></div>
-      <button id="darkModeToggle" title="Toggle dark mode" class="text-xs font-semibold text-slate-300 hover:text-white px-2.5 py-2 rounded-lg hover:bg-white/10 transition">ðŸŒ™</button>
+      <button id="darkModeToggle" title="Toggle dark mode" class="text-xs font-semibold text-slate-300 hover:text-white px-2.5 py-2 rounded-lg hover:bg-white/10 transition">??</button>
       <button id="logoutBtn" class="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition">Logout</button>
     </div>
   </div>
@@ -94,7 +94,7 @@ function escapeHtml(str) {
 }
 
 function formatPkt(iso) {
-  if (!iso) return 'â€”';
+  if (!iso) return '�?"';
   return new Date(iso).toLocaleString('en-PK', { timeZone: 'Asia/Karachi', dateStyle: 'medium', timeStyle: 'short' });
 }
 
@@ -108,7 +108,7 @@ async function loadLogs() {
     document.getElementById('backLink').href = `/dashboard.html?clientId=${encodeURIComponent(CLIENT_ID)}`;
     allLogs = await fetch(`/api/upload-logs?clientId=${encodeURIComponent(CLIENT_ID)}`).then((r) => r.json());
     if (allLogs.length) {
-      document.querySelector('p.text-slate-400').textContent = `${allLogs[0].clientName} â€” Who uploaded what, when, and why`;
+      document.querySelector('p.text-slate-400').textContent = `${allLogs[0].clientName} �?" Who uploaded what, when, and why`;
     }
   } else {
     allLogs = await fetch('/api/upload-logs').then((r) => r.json());
@@ -143,14 +143,14 @@ function renderLogs() {
   body.innerHTML = logs
     .map((l, i) => {
       const contextIdx = detailStore.push({ title: 'Context', html: escapeHtml(l.context || '') }) - 1;
-      const contextShort = (l.context || '').length > 60 ? (l.context || '').slice(0, 60) + 'â€¦' : (l.context || 'â€”');
+      const contextShort = (l.context || '').length > 60 ? (l.context || '').slice(0, 60) + '.' : (l.context || '�?"');
       return `
       <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-orange-50/70 transition-colors">
         <td class="py-2.5 px-3 text-xs text-slate-500 whitespace-nowrap border-b border-slate-100">${formatPkt(l.uploadedAt)}</td>
         <td class="py-2.5 px-3 text-sm font-semibold text-slate-800 border-b border-slate-100 whitespace-nowrap">${escapeHtml(l.clientName)}</td>
         <td class="py-2.5 px-3 text-sm font-mono text-slate-600 border-b border-slate-100 whitespace-nowrap">${escapeHtml(l.uploadedBy)}</td>
         <td class="py-2.5 px-3 text-sm text-slate-700 border-b border-slate-100 max-w-xs truncate" title="${escapeHtml(l.fileName)}">
-          ${l.type === 'summary' ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 ring-1 ring-orange-200 rounded-full px-2 py-0.5">ðŸ¤– ${escapeHtml(l.fileName)}</span>` : escapeHtml(l.fileName)}
+          ${l.type === 'summary' ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 ring-1 ring-orange-200 rounded-full px-2 py-0.5">?? ${escapeHtml(l.fileName)}</span>` : escapeHtml(l.fileName)}
         </td>
         <td class="py-2.5 px-3 text-xs text-slate-500 border-b border-slate-100 whitespace-nowrap">${l.type === 'summary' ? `${l.totalRows} changes / ${l.added} ASINs` : `${l.added} new / ${l.totalRows} total`}</td>
         <td class="py-2.5 px-3 text-sm text-slate-700 border-b border-slate-100 max-w-sm">
@@ -185,11 +185,11 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
 });
 
 const darkModeToggle = document.getElementById('darkModeToggle');
-darkModeToggle.textContent = document.documentElement.classList.contains('dark') ? 'â˜€ï¸' : 'ðŸŒ™';
+darkModeToggle.textContent = document.documentElement.classList.contains('dark') ? '�~?️' : '??';
 darkModeToggle.addEventListener('click', () => {
   const isDark = document.documentElement.classList.toggle('dark');
   localStorage.setItem('darkMode', isDark ? '1' : '0');
-  darkModeToggle.textContent = isDark ? 'â˜€ï¸' : 'ðŸŒ™';
+  darkModeToggle.textContent = isDark ? '�~?️' : '??';
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
