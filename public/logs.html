@@ -55,24 +55,24 @@
   </div>
 
   <div class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden fade-in">
-    <div class="overflow-x-hidden">
-      <table class="w-full text-left border-collapse table-fixed">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[700px] text-left border-collapse table-fixed">
         <colgroup>
-          <col style="width:150px" />
-          <col style="width:105px" />
-          <col style="width:105px" />
-          <col style="width:200px" />
-          <col style="width:165px" />
-          <col />
+          <col style="width:15%" /><!-- Date/Time -->
+          <col style="width:9%" /> <!-- Client -->
+          <col style="width:10%" /><!-- Uploaded By -->
+          <col style="width:22%" /><!-- File -->
+          <col style="width:14%" /><!-- Rows -->
+          <col />                  <!-- Context (remaining) -->
         </colgroup>
         <thead>
           <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
             <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Date/Time (PKT)</th>
-            <th class="py-2.5 px-3 font-semibold border-b border-slate-200">Client</th>
-            <th class="py-2.5 px-3 font-semibold border-b border-slate-200">Uploaded By</th>
-            <th class="py-2.5 px-3 font-semibold border-b border-slate-200">File</th>
-            <th class="py-2.5 px-3 font-semibold border-b border-slate-200">Rows</th>
-            <th class="py-2.5 px-3 font-semibold border-b border-slate-200">Context</th>
+            <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Client</th>
+            <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Uploaded By</th>
+            <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">File</th>
+            <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Rows</th>
+            <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Context</th>
           </tr>
         </thead>
         <tbody id="logTableBody"></tbody>
