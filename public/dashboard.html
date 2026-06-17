@@ -6,6 +6,7 @@
 <title>PPC Reporting Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -110,6 +111,10 @@
 
   <!-- GRAPHS TAB -->
   <section id="tab-graphs">
+    <div id="graphsLoading" class="hidden mb-4 text-sm text-slate-400 flex items-center gap-2">
+      <svg class="animate-spin w-4 h-4 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+      Loading charts...
+    </div>
     <div class="flex flex-wrap items-center gap-3 mb-5">
       <label class="text-sm font-medium text-slate-600">From:</label>
       <input id="graphFromDate" type="date" class="border border-slate-300 rounded-lg px-2 py-2 text-sm bg-white shadow-sm" />

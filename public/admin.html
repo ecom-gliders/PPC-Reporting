@@ -249,7 +249,10 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
   e.preventDefault();
   const openaiApiKey = document.getElementById('openaiApiKey').value.trim();
   const msg = document.getElementById('settingsMsg');
+  const btn = e.target.querySelector('button[type="submit"]');
   msg.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
 
   try {
     const res = await fetch('/api/settings', {
@@ -260,7 +263,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to save settings');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.textContent = '? API key saved.';
+    msg.textContent = '✅ API key saved.';
     msg.classList.remove('hidden');
     document.getElementById('openaiApiKey').value = '';
     await loadSettings();
@@ -268,13 +271,19 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
     msg.textContent = '❌ ' + err.message;
     msg.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
   }
 });
 
 document.getElementById('smtpForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('smtpMsg');
+  const btn = e.target.querySelector('button[type="submit"]');
   msg.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
 
   try {
     const res = await fetch('/api/settings', {
@@ -291,7 +300,7 @@ document.getElementById('smtpForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to save email settings');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.textContent = '? Email settings saved.';
+    msg.textContent = '✅ Email settings saved.';
     msg.classList.remove('hidden');
     document.getElementById('smtpPass').value = '';
     await loadSettings();
@@ -299,6 +308,9 @@ document.getElementById('smtpForm').addEventListener('submit', async (e) => {
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
     msg.textContent = '❌ ' + err.message;
     msg.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Email Settings';
   }
 });
 
@@ -439,7 +451,10 @@ document.getElementById('addClientForm').addEventListener('submit', async (e) =>
   const name = document.getElementById('newClientName').value.trim();
   const email = document.getElementById('newClientEmail').value.trim();
   const msg = document.getElementById('addClientMsg');
+  const btn = e.target.querySelector('button[type="submit"]');
   msg.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
 
   try {
     const res = await fetch('/api/clients', {
@@ -450,7 +465,7 @@ document.getElementById('addClientForm').addEventListener('submit', async (e) =>
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to add client');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.innerHTML = `? Client "${escapeHtml(data.name)}" added. Login: <strong class="font-mono">${escapeHtml(data.loginUsername)}</strong> / <strong class="font-mono">${escapeHtml(data.loginPassword)}</strong>`;
+    msg.innerHTML = `✅ Client "${escapeHtml(data.name)}" added. Login: <strong class="font-mono">${escapeHtml(data.loginUsername)}</strong> / <strong class="font-mono">${escapeHtml(data.loginPassword)}</strong>`;
     msg.classList.remove('hidden');
     document.getElementById('addClientForm').reset();
     await loadClients();
@@ -458,6 +473,9 @@ document.getElementById('addClientForm').addEventListener('submit', async (e) =>
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
     msg.textContent = '❌ ' + err.message;
     msg.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add Client';
   }
 });
 
@@ -603,7 +621,10 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   const role = document.getElementById('newRole').value;
   const clientIds = [...document.querySelectorAll('.new-user-client:checked')].map((el) => el.value);
   const msg = document.getElementById('addUserMsg');
+  const btn = e.target.querySelector('button[type="submit"]');
   msg.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
 
   try {
     const res = await fetch('/api/users', {
@@ -614,7 +635,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to add user');
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700';
-    msg.textContent = `? User "${data.username}" added successfully.`;
+    msg.textContent = `✅ User "${data.username}" added successfully.`;
     msg.classList.remove('hidden');
     document.getElementById('addUserForm').reset();
     await loadUsers();
@@ -622,6 +643,9 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     msg.className = 'mt-3 text-sm rounded-lg px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700';
     msg.textContent = '❌ ' + err.message;
     msg.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add User';
   }
 });
 

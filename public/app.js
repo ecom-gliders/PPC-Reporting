@@ -3,6 +3,23 @@ if (!CLIENT_ID) {
   window.location.href = '/clients.html';
   throw new Error('Redirecting to client selection — no clientId in URL.');
 }
+
+// ---------------- TOAST HELPER ----------------
+let _toastTimer = null;
+function showToast(html, type = 'info') {
+  const toast = document.getElementById('uploadToast');
+  if (!toast) return;
+  const cls = {
+    info: 'bg-blue-50 border-blue-200 text-blue-700',
+    success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+    error: 'bg-rose-50 border-rose-200 text-rose-700',
+    warn: 'bg-amber-50 border-amber-200 text-amber-700',
+  }[type] || 'bg-blue-50 border-blue-200 text-blue-700';
+  toast.innerHTML = `<div class="border text-sm px-4 py-3 rounded-lg ${cls}">${html}</div>`;
+  toast.classList.remove('hidden');
+  clearTimeout(_toastTimer);
+  if (type === 'success') _toastTimer = setTimeout(() => toast.classList.add('hidden'), 5000);
+}
 const cq = (extra = '') => `clientId=${encodeURIComponent(CLIENT_ID)}${extra}`;
 
 const levelColors = {
@@ -167,9 +184,7 @@ document.getElementById('uploadContextSubmit').addEventListener('click', async (
   const file = pendingUploadFile;
   document.getElementById('uploadContextModal').classList.add('hidden');
 
-  const toast = document.getElementById('uploadToast');
-  toast.classList.remove('hidden');
-  toast.innerHTML = `<div class="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-4 py-3 rounded-lg">Uploading & parsing <strong>${escapeHtml(file.name)}</strong>...</div>`;
+  showToast(`Uploading & parsing <strong>${escapeHtml(file.name)}</strong>...`, 'info');
 
   const fd = new FormData();
   fd.append('file', file);
@@ -179,12 +194,10 @@ document.getElementById('uploadContextSubmit').addEventListener('click', async (
     const res = await fetch('/api/upload', { method: 'POST', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Upload failed');
-    toast.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
-      ✅ Uploaded <strong>${escapeHtml(file.name)}</strong> — ${data.totalRows} rows parsed, <strong>${data.added}</strong> new changes added${data.skippedDuplicates ? `, ${data.skippedDuplicates} duplicates skipped` : ''}.
-    </div>`;
+    showToast(`✅ Uploaded <strong>${escapeHtml(file.name)}</strong> — ${data.totalRows} rows parsed, <strong>${data.added}</strong> new changes added${data.skippedDuplicates ? `, ${data.skippedDuplicates} duplicates skipped` : ''}.`, 'success');
     await refreshAll();
   } catch (err) {
-    toast.innerHTML = `<div class="bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-lg">❌ ${escapeHtml(err.message)}</div>`;
+    showToast(`❌ ${escapeHtml(err.message)}`, 'error');
   } finally {
     document.getElementById('fileInput').value = '';
     pendingUploadFile = null;
@@ -193,14 +206,20 @@ document.getElementById('uploadContextSubmit').addEventListener('click', async (
 
 // ---------------- STATS ----------------
 async function loadStats() {
-  const [stats, summaries] = await Promise.all([
-    fetch(`/api/stats?${cq()}`).then((r) => r.json()),
-    fetch(`/api/summaries?${cq()}`).then((r) => r.json()),
-  ]);
-  document.getElementById('statTotal').textContent = stats.totalChanges.toLocaleString();
-  document.getElementById('statAsins').textContent = stats.totalAsins;
-  document.getElementById('statDates').textContent = stats.totalDates;
-  document.getElementById('statSummaries').textContent = summaries.length;
+  try {
+    const [stats, summaries] = await Promise.all([
+      fetch(`/api/stats?${cq()}`).then((r) => r.json()),
+      fetch(`/api/summaries?${cq()}`).then((r) => r.json()),
+    ]);
+    document.getElementById('statTotal').textContent = stats.totalChanges.toLocaleString();
+    document.getElementById('statAsins').textContent = stats.totalAsins;
+    document.getElementById('statDates').textContent = stats.totalDates;
+    document.getElementById('statSummaries').textContent = summaries.length;
+  } catch (err) {
+    ['statTotal','statAsins','statDates','statSummaries'].forEach((id) => {
+      document.getElementById(id).textContent = '—';
+    });
+  }
 }
 
 // ---------------- GRAPHS TAB ----------------
@@ -215,6 +234,16 @@ function destroyDashboardCharts() {
 async function loadGraphs() {
   const from = document.getElementById('graphFromDate').value;
   const to = document.getElementById('graphToDate').value;
+
+  if (from && to && from > to) {
+    showToast('⚠️ "From" date cannot be after "To" date.', 'warn');
+    return;
+  }
+
+  const graphSection = document.getElementById('tab-graphs');
+  const loadingEl = document.getElementById('graphsLoading');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+
   let url = `/api/analytics?${cq()}`;
   if (from) url += `&from=${from}`;
   if (to) url += `&to=${to}`;
@@ -226,7 +255,15 @@ async function loadGraphs() {
     url += `&compareFrom=${compareFrom}&compareTo=${compareTo}`;
   }
 
-  const data = await fetch(url).then((r) => r.json());
+  let data;
+  try {
+    data = await fetch(url).then((r) => r.json());
+  } catch (err) {
+    if (loadingEl) loadingEl.classList.add('hidden');
+    showToast('❌ Failed to load graphs: ' + err.message, 'error');
+    return;
+  }
+  if (loadingEl) loadingEl.classList.add('hidden');
 
   destroyDashboardCharts();
 
@@ -375,6 +412,7 @@ document.getElementById('compareToDate').addEventListener('change', loadGraphs);
 let availableDates = [];
 
 async function loadDates() {
+  try {
   availableDates = await fetch(`/api/dates?${cq()}`).then((r) => r.json());
   const sel = document.getElementById('dateSelect');
   sel.innerHTML = availableDates.map((d) => `<option value="${d}">${formatDate(d)}</option>`).join('');
@@ -383,6 +421,9 @@ async function loadDates() {
     loadDailyChanges(availableDates[0]);
   } else {
     document.getElementById('dailyContainer').innerHTML = `<p class="text-slate-400 text-sm">No data uploaded yet. Upload a Change History CSV to get started.</p>`;
+  }
+  } catch (err) {
+    document.getElementById('dailyContainer').innerHTML = `<p class="text-rose-500 text-sm">Failed to load dates: ${escapeHtml(err.message)}</p>`;
   }
 }
 
@@ -399,9 +440,13 @@ document.getElementById('dailySearch').addEventListener('input', () => renderDai
 async function loadDailyChanges(date) {
   const container = document.getElementById('dailyContainer');
   container.innerHTML = `<p class="text-slate-400 text-sm">Loading...</p>`;
-  const data = await fetch(`/api/changes?date=${date}&${cq()}`).then((r) => r.json());
-  lastDailyData = data;
-  renderDailyChanges();
+  try {
+    const data = await fetch(`/api/changes?date=${date}&${cq()}`).then((r) => r.json());
+    lastDailyData = data;
+    renderDailyChanges();
+  } catch (err) {
+    container.innerHTML = `<p class="text-rose-500 text-sm">Failed to load changes: ${escapeHtml(err.message)}</p>`;
+  }
 }
 
 function renderDailyChanges() {
@@ -505,6 +550,9 @@ function asinDateQuery() {
 }
 
 document.getElementById('asinApplyFilterBtn').addEventListener('click', () => {
+  const af = document.getElementById('asinFromDate').value;
+  const at = document.getElementById('asinToDate').value;
+  if (af && at && af > at) { showToast('⚠️ "From" date cannot be after "To" date.', 'warn'); return; }
   loadAsinList();
   if (selectedAsin) loadAsinTimeline(selectedAsin);
 });
@@ -516,7 +564,13 @@ document.getElementById('asinClearFilterBtn').addEventListener('click', () => {
 });
 
 async function loadAsinList() {
-  let asins = await fetch(`/api/asins?${cq()}${asinDateQuery()}`).then((r) => r.json());
+  let asins;
+  try {
+    asins = await fetch(`/api/asins?${cq()}${asinDateQuery()}`).then((r) => r.json());
+  } catch (err) {
+    document.getElementById('asinList').innerHTML = `<p class="text-rose-500 text-sm p-4">Failed to load ASINs: ${escapeHtml(err.message)}</p>`;
+    return;
+  }
   asins = asins.sort((a, b) => {
     if (a.asin === 'UNASSIGNED') return 1;
     if (b.asin === 'UNASSIGNED') return -1;
@@ -560,7 +614,13 @@ async function loadAsinTimeline(asin) {
   detailStore = [];
   const container = document.getElementById('asinTimeline');
   container.innerHTML = `<p class="text-slate-400 text-sm">Loading...</p>`;
-  const data = await fetch(`/api/changes?asin=${encodeURIComponent(asin)}&${cq()}${asinDateQuery()}`).then((r) => r.json());
+  let data;
+  try {
+    data = await fetch(`/api/changes?asin=${encodeURIComponent(asin)}&${cq()}${asinDateQuery()}`).then((r) => r.json());
+  } catch (err) {
+    container.innerHTML = `<p class="text-rose-500 text-sm">Failed to load timeline: ${escapeHtml(err.message)}</p>`;
+    return;
+  }
   const rows = data.grouped[asin] || [];
 
   if (!rows.length) {
@@ -629,7 +689,13 @@ let cachedSummaries = [];
 async function loadSummaries() {
   const list = document.getElementById('summaryList');
   list.innerHTML = `<p class="text-slate-400 text-sm">Loading...</p>`;
-  const summaries = await fetch(`/api/summaries?${cq()}`).then((r) => r.json());
+  let summaries;
+  try {
+    summaries = await fetch(`/api/summaries?${cq()}`).then((r) => r.json());
+  } catch (err) {
+    list.innerHTML = `<p class="text-rose-500 text-sm">Failed to load summaries: ${escapeHtml(err.message)}</p>`;
+    return;
+  }
   cachedSummaries = summaries;
 
   if (!summaries.length) {
@@ -660,7 +726,7 @@ function renderSummaryCard(s, expanded) {
           <span class="bg-slate-100 rounded-full px-3 py-1">${s.asinCount} ASINs</span>
         </div>
         <div class="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-slate-800 prose-h2:text-base prose-h3:text-sm prose-li:text-slate-600">
-          ${marked.parse(s.summary)}
+          ${typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(s.summary)) : marked.parse(s.summary)}
         </div>
       </div>
     </div>`;
@@ -727,7 +793,13 @@ document.getElementById('filterSummaryBtn').addEventListener('click', () => {
 
 // ---------------- AUTH ----------------
 async function loadMe() {
-  const data = await fetch('/api/me').then((r) => r.json());
+  let data;
+  try {
+    data = await fetch('/api/me').then((r) => r.json());
+  } catch (err) {
+    window.location.href = '/login.html';
+    return;
+  }
   if (!data.user) {
     window.location.href = '/login.html';
     return;
