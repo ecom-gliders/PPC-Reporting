@@ -17,6 +17,9 @@
   }
   .fade-in { animation: fadeIn .3s ease-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+  .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
   html.dark { filter: invert(1) hue-rotate(180deg); }
   html.dark img, html.dark svg, html.dark video, html.dark canvas, html.dark iframe {
     filter: invert(1) hue-rotate(180deg);
@@ -31,7 +34,7 @@
 <div class="sticky top-0 z-20 bg-slate-900 shadow-lg shadow-slate-900/10">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
     <div class="flex items-center gap-3 min-w-0">
-      <img src="/logo.png" alt="Logo" class="w-8 h-8 object-contain shrink-0" />
+      <img src="/logo.png" alt="Logo" class="w-10 h-10 object-contain shrink-0" />
       <div class="min-w-0">
         <h1 class="text-sm font-bold tracking-tight text-white leading-tight truncate">Logs</h1>
       </div>
@@ -55,7 +58,7 @@
   </div>
 
   <div class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden fade-in">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto scrollbar-thin">
       <table class="w-full min-w-[700px] text-left border-collapse table-fixed">
         <colgroup>
           <col style="width:15%" /><!-- Date/Time -->
