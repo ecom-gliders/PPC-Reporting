@@ -110,6 +110,10 @@ app.get('/api/me', (req, res) => {
 // login page itself must be accessible without auth
 app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 
+// static assets (images, fonts, scripts) must be public so login page can load them
+app.use('/logo.png', express.static(path.join(__dirname, 'public', 'logo.png')));
+app.use('/app.js', express.static(path.join(__dirname, 'public', 'app.js')));
+
 // everything else requires login
 app.use(requireAuth);
 app.get('/admin.html', requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
