@@ -46,9 +46,18 @@ const actionColors = {
   'Product Status': 'border-orange-500 text-orange-700 bg-orange-50',
 };
 
+const ACTION_SHORT = {
+  'Bid Adjustment (Top of Search)': 'Top of Search',
+  'Bid Adjustment (Rest of Search)': 'Rest of Search',
+  'Bid Adjustment (Product Pages)': 'Product Pages',
+  'Bid Adjustment': 'Bid Adjustment',
+  'Negative Keyword': 'Neg. Keyword',
+};
+
 function actionBadge(action) {
   const cls = actionColors[action] || 'border-slate-400 text-slate-700 bg-slate-50';
-  return `<span class="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-md border-l-[3px] ${cls}">${escapeHtml(action)}</span>`;
+  const label = ACTION_SHORT[action] ?? action;
+  return `<span class="inline-flex items-center text-[11px] font-semibold px-2 py-1 rounded-md border-l-[3px] whitespace-nowrap ${cls}" title="${escapeHtml(action)}">${escapeHtml(label)}</span>`;
 }
 
 function levelBadge(level) {
@@ -575,10 +584,10 @@ function renderDailyChanges() {
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse min-w-[700px] table-fixed">
             <colgroup>
-              <col style="width:60px" />
-              <col style="width:100px" />
-              <col style="width:152px" />
+              <col style="width:58px" />
+              <col style="width:95px" />
               <col style="width:130px" />
+              <col style="width:140px" />
               <col />
               <col style="width:168px" />
             </colgroup>
@@ -726,10 +735,10 @@ async function loadAsinTimeline(asin) {
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse min-w-[700px] table-fixed">
             <colgroup>
-              <col style="width:60px" />
-              <col style="width:100px" />
-              <col style="width:152px" />
+              <col style="width:58px" />
+              <col style="width:95px" />
               <col style="width:130px" />
+              <col style="width:140px" />
               <col />
               <col style="width:168px" />
             </colgroup>
