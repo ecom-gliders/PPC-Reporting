@@ -106,12 +106,14 @@ function targetCell(text) {
 }
 
 function revealTruncatedEyes(container) {
-  container.querySelectorAll('.target-cell-wrap').forEach((wrap) => {
-    const span = wrap.querySelector('span.truncate');
-    const eyeWrap = wrap.querySelector('.target-eye-wrap');
-    if (span && eyeWrap && span.scrollWidth > span.clientWidth) {
-      eyeWrap.classList.remove('hidden');
-    }
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.target-cell-wrap').forEach((wrap) => {
+      const span = wrap.querySelector('span.truncate');
+      const eyeWrap = wrap.querySelector('.target-eye-wrap');
+      if (span && eyeWrap && span.scrollWidth > span.clientWidth) {
+        eyeWrap.classList.remove('hidden');
+      }
+    });
   });
 }
 
@@ -201,6 +203,10 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     if (btn.dataset.tab === 'asin') loadAsinList();
     if (btn.dataset.tab === 'summary') loadSummaries();
     if (btn.dataset.tab === 'graphs') loadGraphs();
+    if (btn.dataset.tab === 'daily') {
+      const c = document.getElementById('dailyContainer');
+      if (c) revealTruncatedEyes(c);
+    }
 
     localStorage.setItem(`activeTab_${CLIENT_ID}`, btn.dataset.tab);
   });
