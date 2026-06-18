@@ -50,13 +50,46 @@ const ACTION_SHORT = {
   'Bid Adjustment (Top of Search)': 'Top of Search',
   'Bid Adjustment (Rest of Search)': 'Rest of Search',
   'Bid Adjustment (Product Pages)': 'Product Pages',
-  'Bid Adjustment': 'Bid Adjustment',
+  'Bid Adjustment': 'Bid Adj.',
   'Negative Keyword': 'Neg. Keyword',
+  'Keyword Added': 'Keyword +',
+  'Keyword Removed': 'Keyword −',
+  'Keyword Status': 'KW Status',
+  'Targeting Added': 'Targeting +',
+  'Targeting Removed': 'Targeting −',
+  'Targeting Status': 'Target Status',
+  'Targeting Bid': 'Target Bid',
+  'Category Target Bid': 'Cat. Bid',
+  'Product Added': 'Product +',
+  'Product Removed': 'Product −',
+  'Product Status': 'Product Status',
+  'Ad Group Created': 'Ad Group +',
+  'Ad Group Name': 'AG Name',
+  'Ad Group Status': 'AG Status',
+  'Campaign Created': 'Campaign +',
+  'Campaign Name': 'Camp. Name',
+  'Campaign Status': 'Camp. Status',
+  'Budget': 'Budget',
+  'Portfolio': 'Portfolio',
 };
+
+function getActionLabel(action) {
+  if (ACTION_SHORT[action] !== undefined) return ACTION_SHORT[action];
+  // Pattern fallback for any unmapped raw values that slipped through
+  const low = action.toLowerCase();
+  if (low.includes('targeting group') && low.includes('added')) return 'Targeting +';
+  if (low.includes('targeting group') && low.includes('delet')) return 'Targeting −';
+  if (low.includes('campaign') && low.includes('creat')) return 'Campaign +';
+  if (low.includes('ad group') && low.includes('creat')) return 'Ad Group +';
+  if (low.includes('keyword') && low.includes('added')) return 'Keyword +';
+  if (low.includes('keyword') && low.includes('delet')) return 'Keyword −';
+  // Truncate anything still too long
+  return action.length > 18 ? action.slice(0, 16) + '…' : action;
+}
 
 function actionBadge(action) {
   const cls = actionColors[action] || 'border-slate-400 text-slate-700 bg-slate-50';
-  const label = ACTION_SHORT[action] ?? action;
+  const label = getActionLabel(action);
   return `<span class="inline-flex items-center text-[11px] font-semibold px-2 py-1 rounded-md border-l-[3px] whitespace-nowrap ${cls}" title="${escapeHtml(action)}">${escapeHtml(label)}</span>`;
 }
 

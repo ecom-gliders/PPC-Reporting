@@ -25,13 +25,21 @@ function detectAction(changeType) {
   }
   if (t.startsWith('targeting group bid')) return 'Targeting Bid';
   if (t.startsWith('targeting group status')) return 'Targeting Status';
+  if (t.startsWith('targeting group') && t.includes('added')) return 'Targeting Added';
+  if (t.startsWith('targeting group') && t.includes('delet')) return 'Targeting Removed';
+  if (t.startsWith('targeting group')) return 'Targeting';
   if (t.startsWith('category target bid')) return 'Category Target Bid';
   if (t.startsWith('ad product status')) return 'Product Status';
   if (t.startsWith('ad product') && t.includes('added to ad group')) return 'Product Added';
+  if (t.startsWith('ad product') && t.includes('delet')) return 'Product Removed';
   if (t.startsWith('ad group name')) return 'Ad Group Name';
   if (t.startsWith('ad group status')) return 'Ad Group Status';
+  if (t.startsWith('ad group') && t.includes('creat')) return 'Ad Group Created';
   if (t.startsWith('campaign name')) return 'Campaign Name';
+  if (t.startsWith('campaign') && t.includes('creat')) return 'Campaign Created';
   if (t.startsWith('portfolio')) return 'Portfolio';
+  if (t.startsWith('keyword') && t.includes('delet')) return 'Keyword Removed';
+  if (t.startsWith('keyword') && t.includes('creat')) return 'Keyword Added';
   return changeType;
 }
 
