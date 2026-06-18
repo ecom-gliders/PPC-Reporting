@@ -598,7 +598,7 @@ function renderDailyChanges() {
           <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
           <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
           <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
-          <td class="py-2 px-3 border-b border-slate-100">${targetCell(shortName(r.changeLevel, r.asin))}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${targetCell(r.changeLevel)}</td>
           <td class="py-2 px-3 border-b border-slate-100">${keywordCell(r)}</td>
           <td class="py-2 px-3 border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
         </tr>`
@@ -751,7 +751,7 @@ async function loadAsinTimeline(asin) {
           <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
           <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
           <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
-          <td class="py-2 px-3 border-b border-slate-100">${targetCell(shortName(r.changeLevel, r.asin))}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${targetCell(r.changeLevel)}</td>
           <td class="py-2 px-3 border-b border-slate-100">${keywordCell(r)}</td>
           <td class="py-2 px-3 border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
         </tr>`
