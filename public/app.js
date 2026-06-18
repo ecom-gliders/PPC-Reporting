@@ -567,14 +567,14 @@ function renderDailyChanges() {
           <a href="https://www.amazon.com/dp/${encodeURIComponent(asin)}" target="_blank" class="text-xs font-medium text-orange-600 hover:text-orange-700 hover:underline ${asin === 'UNASSIGNED' ? 'hidden' : ''}">View on Amazon ↗</a>
         </div>
         <div class="overflow-x-auto scrollbar-thin">
-          <table class="w-full text-left border-collapse min-w-[720px] table-fixed">
+          <table class="w-full text-left border-collapse min-w-[700px] table-fixed">
             <colgroup>
-              <col style="width:58px" />
-              <col style="width:80px" />
-              <col style="width:148px" />
-              <col style="width:120px" />
+              <col style="width:60px" />
+              <col style="width:100px" />
+              <col style="width:152px" />
+              <col style="width:130px" />
               <col />
-              <col style="width:162px" />
+              <col style="width:168px" />
             </colgroup>
             <thead>
               <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
@@ -718,14 +718,14 @@ async function loadAsinTimeline(asin) {
           <span class="text-[11px] font-semibold text-orange-600 bg-orange-50 ring-1 ring-orange-200 rounded-full px-2.5 py-0.5">${items.length} change${items.length === 1 ? '' : 's'}</span>
         </div>
         <div class="overflow-x-auto scrollbar-thin">
-          <table class="w-full text-left border-collapse min-w-[720px] table-fixed">
+          <table class="w-full text-left border-collapse min-w-[700px] table-fixed">
             <colgroup>
-              <col style="width:58px" />
-              <col style="width:80px" />
-              <col style="width:148px" />
-              <col style="width:120px" />
+              <col style="width:60px" />
+              <col style="width:100px" />
+              <col style="width:152px" />
+              <col style="width:130px" />
               <col />
-              <col style="width:162px" />
+              <col style="width:168px" />
             </colgroup>
             <thead>
               <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">

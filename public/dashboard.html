@@ -181,13 +181,13 @@
       <button id="asinApplyFilterBtn" class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow transition">Apply</button>
       <button id="asinClearFilterBtn" class="text-sm font-semibold text-slate-500 hover:text-slate-700 px-3 py-2">Clear</button>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-1">
+    <div class="flex flex-col lg:flex-row gap-6">
+      <div class="lg:w-56 shrink-0">
         <h3 class="text-sm font-semibold text-slate-600 mb-3">Select an ASIN</h3>
         <input id="asinSearch" type="text" placeholder="Search ASIN..." class="w-full mb-2 border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:ring-2 focus:ring-orange-400 focus:outline-none" />
         <div id="asinList" class="bg-white rounded-xl border-2 border-slate-300 divide-y divide-slate-100 max-h-[600px] overflow-y-auto scrollbar-thin shadow-sm"></div>
       </div>
-      <div class="lg:col-span-2">
+      <div class="flex-1 min-w-0">
         <h3 class="text-sm font-semibold text-slate-600 mb-3">Change Timeline</h3>
         <div id="asinTimeline" class="min-h-[200px]">
           <div class="bg-white rounded-xl border-2 border-slate-300 p-5 shadow-sm">
