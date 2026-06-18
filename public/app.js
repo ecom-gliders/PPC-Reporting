@@ -98,11 +98,21 @@ function eyeBtn(idx) {
 }
 
 function targetCell(text) {
-  const idx = detailStore.push({ title: 'Target', html: `<div class="font-mono text-sm">${escapeHtml(text)}</div>` }) - 1;
-  return `<div class="flex items-center gap-1.5 min-w-0">
+  const idx = detailStore.push({ title: 'Target', html: `<div class="font-mono text-sm break-all">${escapeHtml(text)}</div>` }) - 1;
+  return `<div class="flex items-center gap-1.5 min-w-0 target-cell-wrap">
     <span class="truncate" title="${escapeHtml(text)}">${escapeHtml(text)}</span>
-    ${text.length > 40 ? eyeBtn(idx) : ''}
+    <span class="target-eye-wrap hidden shrink-0">${eyeBtn(idx)}</span>
   </div>`;
+}
+
+function revealTruncatedEyes(container) {
+  container.querySelectorAll('.target-cell-wrap').forEach((wrap) => {
+    const span = wrap.querySelector('span.truncate');
+    const eyeWrap = wrap.querySelector('.target-eye-wrap');
+    if (span && eyeWrap && span.scrollWidth > span.clientWidth) {
+      eyeWrap.classList.remove('hidden');
+    }
+  });
 }
 
 function fromToCell(from, to, action) {
@@ -555,6 +565,7 @@ function renderDailyChanges() {
       </div>`;
     })
     .join('');
+  revealTruncatedEyes(container);
 }
 
 // ---------------- ASIN TAB ----------------
@@ -703,6 +714,7 @@ async function loadAsinTimeline(asin) {
       </div>`;
     })
     .join('');
+  revealTruncatedEyes(container);
 }
 
 // ---------------- SUMMARY TAB ----------------
