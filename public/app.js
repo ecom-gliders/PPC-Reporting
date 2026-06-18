@@ -60,10 +60,32 @@ function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function fromToBadge(from, to) {
+const BID_ACTION_SET = new Set([
+  'Keyword Bid', 'Targeting Bid', 'Category Target Bid',
+  'Bid Adjustment', 'Bid Adjustment (Top of Search)',
+  'Bid Adjustment (Rest of Search)', 'Bid Adjustment (Product Pages)',
+]);
+
+function parseNumericVal(v) {
+  if (v == null) return null;
+  const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function bidDirBadge(from, to, action) {
+  if (!action || !BID_ACTION_SET.has(action)) return '';
+  const f = parseNumericVal(from);
+  const t = parseNumericVal(to);
+  if (f === null || t === null || f === t) return '';
+  if (t > f) return `<span class="inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1 ml-1">&#x25B2; Up</span>`;
+  return `<span class="inline-flex items-center text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded px-1 ml-1">&#x25BC; Down</span>`;
+}
+
+function fromToBadge(from, to, action) {
   if (!from && !to) return '';
   const arrow = `<span class="text-slate-400 mx-1">→</span>`;
-  return `<span class="font-mono text-xs"><span class="text-rose-600 line-through">${escapeHtml(from)}</span>${arrow}<span class="text-emerald-600 font-semibold">${escapeHtml(to)}</span></span>`;
+  const dir = bidDirBadge(from, to, action);
+  return `<span class="inline-flex items-center flex-wrap font-mono text-xs"><span class="text-rose-600 line-through">${escapeHtml(from)}</span>${arrow}<span class="text-emerald-600 font-semibold">${escapeHtml(to)}</span>${dir}</span>`;
 }
 
 // ---------------- DETAIL MODAL ----------------
@@ -83,8 +105,8 @@ function targetCell(text) {
   </div>`;
 }
 
-function fromToCell(from, to) {
-  const badge = fromToBadge(from, to);
+function fromToCell(from, to, action) {
+  const badge = fromToBadge(from, to, action);
   if (!badge) return '';
   const isLong = (from || '').length > 30 || (to || '').length > 30;
   if (!isLong) return badge;
@@ -495,7 +517,7 @@ function renderDailyChanges() {
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
           <td class="py-2.5 px-4 text-sm text-slate-700 border-b border-slate-100 max-w-sm">${targetCell(shortName(r.changeLevel, r.asin))}</td>
-          <td class="py-2.5 px-4 max-w-xs border-b border-slate-100">${fromToCell(r.from, r.to)}</td>
+          <td class="py-2.5 px-4 max-w-xs border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
         </tr>`
         )
         .join('');
@@ -645,7 +667,7 @@ async function loadAsinTimeline(asin) {
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
           <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
           <td class="py-2.5 px-4 text-sm text-slate-700 border-b border-slate-100 max-w-sm">${targetCell(shortName(r.changeLevel, r.asin))}</td>
-          <td class="py-2.5 px-4 max-w-xs border-b border-slate-100">${fromToCell(r.from, r.to)}</td>
+          <td class="py-2.5 px-4 max-w-xs border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
         </tr>`
         )
         .join('');
