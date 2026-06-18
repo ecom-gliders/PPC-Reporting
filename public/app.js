@@ -77,8 +77,8 @@ function bidDirBadge(from, to, action) {
   const f = parseNumericVal(from);
   const t = parseNumericVal(to);
   if (f === null || t === null || f === t) return '';
-  if (t > f) return `<span class="inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1 ml-1">&#x25B2; Up</span>`;
-  return `<span class="inline-flex items-center text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded px-1 ml-1">&#x25BC; Down</span>`;
+  if (t > f) return `<span class="inline-flex items-center text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5 ml-1">&#x25B2; Up</span>`;
+  return `<span class="inline-flex items-center text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded px-1.5 ml-1">&#x25BC; Down</span>`;
 }
 
 function fromToBadge(from, to, action) {
@@ -100,7 +100,7 @@ function eyeBtn(idx) {
 function targetCell(text) {
   const idx = detailStore.push({ title: 'Target', html: `<div class="font-mono text-sm break-all">${escapeHtml(text)}</div>` }) - 1;
   return `<div class="flex items-center gap-1.5 min-w-0 target-cell-wrap">
-    <span class="truncate" title="${escapeHtml(text)}">${escapeHtml(text)}</span>
+    <span class="truncate text-sm text-slate-600" title="${escapeHtml(text)}">${escapeHtml(text)}</span>
     <span class="target-eye-wrap hidden shrink-0">${eyeBtn(idx)}</span>
   </div>`;
 }
@@ -166,11 +166,11 @@ function keywordCell(r) {
   if (!kw) return '';
   const idx = detailStore.push({
     title: 'Keyword',
-    html: `<div class="font-mono text-sm break-all">${escapeHtml(kw.text)}<div class="mt-1 text-xs text-slate-400">Match type: ${escapeHtml(kw.matchType)}</div></div>`,
+    html: `<div class="text-sm break-all text-slate-800">${escapeHtml(kw.text)}<div class="mt-1 text-xs text-slate-400">Match type: ${escapeHtml(kw.matchType)}</div></div>`,
   }) - 1;
-  return `<div class="flex items-center gap-1 min-w-0 target-cell-wrap">
-    <span class="truncate text-sm text-slate-700" title="${escapeHtml(kw.text)}">${escapeHtml(kw.text)}</span>
-    <span class="shrink-0 inline-flex items-center text-[10px] font-semibold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">${escapeHtml(kw.matchType)}</span>
+  return `<div class="flex items-center gap-1.5 min-w-0 target-cell-wrap">
+    <span class="truncate text-sm font-medium text-slate-800" title="${escapeHtml(kw.text)}">${escapeHtml(kw.text)}</span>
+    <span class="shrink-0 inline-flex items-center text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 whitespace-nowrap">${escapeHtml(kw.matchType)}</span>
     <span class="target-eye-wrap hidden shrink-0">${eyeBtn(idx)}</span>
   </div>`;
 }
@@ -547,12 +547,12 @@ function renderDailyChanges() {
         .map(
           (r, i) => `
         <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-orange-50/70 transition-colors">
-          <td class="py-2.5 px-4 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
-          <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
-          <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
-          <td class="py-2.5 px-4 border-b border-slate-100">${targetCell(shortName(r.changeLevel, r.asin))}</td>
-          <td class="py-2.5 px-4 border-b border-slate-100">${keywordCell(r)}</td>
-          <td class="py-2.5 px-4 border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
+          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
+          <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
+          <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${targetCell(shortName(r.changeLevel, r.asin))}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${keywordCell(r)}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
         </tr>`
         )
         .join('');
@@ -567,23 +567,23 @@ function renderDailyChanges() {
           <a href="https://www.amazon.com/dp/${encodeURIComponent(asin)}" target="_blank" class="text-xs font-medium text-orange-600 hover:text-orange-700 hover:underline ${asin === 'UNASSIGNED' ? 'hidden' : ''}">View on Amazon ↗</a>
         </div>
         <div class="overflow-x-auto scrollbar-thin">
-          <table class="w-full text-left border-collapse min-w-[860px] table-fixed">
+          <table class="w-full text-left border-collapse min-w-[720px] table-fixed">
             <colgroup>
-              <col class="w-[72px]" />
-              <col class="w-[100px]" />
-              <col class="w-[190px]" />
-              <col class="w-[160px]" />
+              <col style="width:58px" />
+              <col style="width:80px" />
+              <col style="width:148px" />
+              <col style="width:120px" />
               <col />
-              <col class="w-[200px]" />
+              <col style="width:162px" />
             </colgroup>
             <thead>
               <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Time</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Level</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Change Type</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Target</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Keyword</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">From → To</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Time</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Level</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Change Type</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Target</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Keyword</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">From → To</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -653,18 +653,17 @@ function renderAsinList() {
   list.innerHTML = asins
     .map(
       (a) => `
-    <button class="asin-item w-full text-left px-4 py-3 hover:bg-orange-50 transition flex items-center justify-between" data-asin="${a.asin}">
-      <span class="font-mono text-sm font-semibold text-slate-700">${a.asin}</span>
-      <span class="text-xs bg-slate-100 text-slate-500 rounded-full px-2 py-0.5">${a.count}</span>
+    <button class="asin-item w-full text-left px-4 py-2.5 hover:bg-orange-50/70 transition-colors flex items-center justify-between gap-2${a.asin === selectedAsin ? ' bg-orange-50 border-l-2 border-orange-400' : ' border-l-2 border-transparent'}" data-asin="${a.asin}">
+      <span class="font-mono text-sm font-semibold truncate${a.asin === selectedAsin ? ' text-orange-700' : ' text-slate-700'}">${a.asin}</span>
+      <span class="shrink-0 text-[11px] font-semibold bg-slate-100 text-slate-500 rounded-full px-2 py-0.5">${a.count}</span>
     </button>`
     )
     .join('');
 
   list.querySelectorAll('.asin-item').forEach((btn) =>
     btn.addEventListener('click', () => {
-      list.querySelectorAll('.asin-item').forEach((b) => b.classList.remove('bg-orange-50'));
-      btn.classList.add('bg-orange-50');
       selectedAsin = btn.dataset.asin;
+      renderAsinList();
       loadAsinTimeline(selectedAsin);
     })
   );
@@ -701,12 +700,12 @@ async function loadAsinTimeline(asin) {
         .map(
           (r, i) => `
         <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-orange-50/70 transition-colors">
-          <td class="py-2.5 px-4 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
-          <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
-          <td class="py-2.5 px-4 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
-          <td class="py-2.5 px-4 border-b border-slate-100">${targetCell(shortName(r.changeLevel, r.asin))}</td>
-          <td class="py-2.5 px-4 border-b border-slate-100">${keywordCell(r)}</td>
-          <td class="py-2.5 px-4 border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
+          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap font-mono border-b border-slate-100">${r.datetime.split(' ')[1] || ''}</td>
+          <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${levelBadge(r.level)}</td>
+          <td class="py-2 px-3 whitespace-nowrap border-b border-slate-100">${actionBadge(r.action)}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${targetCell(shortName(r.changeLevel, r.asin))}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${keywordCell(r)}</td>
+          <td class="py-2 px-3 border-b border-slate-100">${fromToCell(r.from, r.to, r.action)}</td>
         </tr>`
         )
         .join('');
@@ -719,23 +718,23 @@ async function loadAsinTimeline(asin) {
           <span class="text-[11px] font-semibold text-orange-600 bg-orange-50 ring-1 ring-orange-200 rounded-full px-2.5 py-0.5">${items.length} change${items.length === 1 ? '' : 's'}</span>
         </div>
         <div class="overflow-x-auto scrollbar-thin">
-          <table class="w-full text-left border-collapse min-w-[860px] table-fixed">
+          <table class="w-full text-left border-collapse min-w-[720px] table-fixed">
             <colgroup>
-              <col class="w-[72px]" />
-              <col class="w-[100px]" />
-              <col class="w-[190px]" />
-              <col class="w-[160px]" />
+              <col style="width:58px" />
+              <col style="width:80px" />
+              <col style="width:148px" />
+              <col style="width:120px" />
               <col />
-              <col class="w-[200px]" />
+              <col style="width:162px" />
             </colgroup>
             <thead>
               <tr class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Time</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Level</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Change Type</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Target</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">Keyword</th>
-                <th class="py-2.5 px-4 font-semibold border-b border-slate-200 whitespace-nowrap">From → To</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Time</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Level</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Change Type</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Target</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">Keyword</th>
+                <th class="py-2.5 px-3 font-semibold border-b border-slate-200 whitespace-nowrap">From → To</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
