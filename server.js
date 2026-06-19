@@ -659,7 +659,6 @@ app.post('/api/summaries/generate', requireClientAccess, requireAdmin, async (re
     const { from, to, context } = req.body || {};
     const summary = await generateWeeklySummary({ clientId: req.clientId, from, to, context });
     logSummaryGeneration(req.clientId, summary, req.session.user.username);
-    await emailWeeklyReport(req.clientId, summary);
     res.json(summary);
   } catch (err) {
     console.error(err);

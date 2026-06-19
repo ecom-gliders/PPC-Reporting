@@ -826,9 +826,17 @@ function renderSummaryCard(s, expanded) {
     <div class="bg-white rounded-xl border-2 border-slate-300 shadow-sm fade-in summary-card" data-id="${s.id}" data-expanded="${expanded ? '1' : '0'}">
       <div class="flex items-center justify-between mb-0 flex-wrap gap-2 p-6 cursor-pointer summary-card-header">
         <h4 class="font-bold text-slate-900">📊 Optimization Summary: ${formatDate(s.from)} – ${formatDate(s.to)}</h4>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs text-slate-400">Generated ${new Date(s.generatedAt).toLocaleString()}</span>
-          ${isAdmin ? `<button class="summary-delete-btn text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition" data-id="${s.id}" title="Delete summary">🗑 Delete</button>` : ''}
+          ${isAdmin ? `
+          <button class="summary-send-btn inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md transition" data-id="${s.id}" title="Send email to client">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Send Email
+          </button>
+          <button class="summary-delete-btn inline-flex items-center gap-1 text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md transition" data-id="${s.id}" title="Delete summary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Delete
+          </button>` : ''}
         </div>
       </div>
       <div class="summary-card-body ${expanded ? '' : 'hidden'} px-6 pb-6">
@@ -846,7 +854,7 @@ function renderSummaryCard(s, expanded) {
 function attachSummaryCardHandlers() {
   document.querySelectorAll('.summary-card-header').forEach((header) => {
     header.addEventListener('click', (e) => {
-      if (e.target.closest('.summary-delete-btn')) return;
+      if (e.target.closest('.summary-delete-btn') || e.target.closest('.summary-send-btn')) return;
       const card = header.closest('.summary-card');
       const wasExpanded = card.dataset.expanded === '1';
       const allCards = Array.from(document.querySelectorAll('.summary-card'));
@@ -856,6 +864,27 @@ function attachSummaryCardHandlers() {
         c.dataset.expanded = open ? '1' : '0';
         c.querySelector('.summary-card-body').classList.toggle('hidden', !open);
       });
+    });
+  });
+
+  document.querySelectorAll('.summary-send-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        const res = await fetch(`/api/summaries/${id}/send-email?${cq()}`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send');
+        showToast(`Email sent to ${escapeHtml(data.sentTo)}`, 'success');
+      } catch (err) {
+        showToast(`Error: ${escapeHtml(err.message)}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
     });
   });
 
