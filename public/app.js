@@ -807,6 +807,7 @@ async function loadSummaries() {
     list.innerHTML = `<p class="text-rose-500 text-sm">Failed to load summaries: ${escapeHtml(err.message)}</p>`;
     return;
   }
+  summaries.sort((a, b) => (a.to > b.to ? -1 : a.to < b.to ? 1 : 0));
   cachedSummaries = summaries;
 
   if (!summaries.length) {
