@@ -1015,10 +1015,7 @@ loadMe();
 loadClientName();
 refreshAll();
 
-// If the link includes ?tab=summary (e.g. from a report email), open that tab directly.
-// Otherwise restore whichever tab the user was last viewing for this client.
-const REQUESTED_TAB = new URLSearchParams(window.location.search).get('tab') || localStorage.getItem(`activeTab_${CLIENT_ID}`);
-if (REQUESTED_TAB) {
-  const tabBtn = document.querySelector(`.tab-btn[data-tab="${REQUESTED_TAB}"]`);
-  if (tabBtn) tabBtn.click();
-}
+// Restore last viewed tab (or ?tab= from URL), default to graphs — no flash because all sections start hidden
+const REQUESTED_TAB = new URLSearchParams(window.location.search).get('tab') || localStorage.getItem(`activeTab_${CLIENT_ID}`) || 'graphs';
+const _initTabBtn = document.querySelector(`.tab-btn[data-tab="${REQUESTED_TAB}"]`);
+if (_initTabBtn) _initTabBtn.click();
