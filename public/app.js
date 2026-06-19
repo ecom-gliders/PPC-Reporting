@@ -811,7 +811,7 @@ async function loadSummaries() {
 
   if (!summaries.length) {
     list.innerHTML = `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">
-      No AI summaries generated yet. Click <strong>Generate Now</strong> or wait for the automatic Friday run.
+      No AI summaries generated yet. Automatic report generates every Saturday at 2:00 AM PKT.
     </div>`;
     return;
   }
@@ -884,9 +884,7 @@ document.getElementById('filterSummaryBtn').addEventListener('click', () => {
   const list = document.getElementById('summaryList');
 
   if (!from || !to) {
-    list.innerHTML = cachedSummaries.map((s, i) => renderSummaryCard(s, i === 0)).join('') || `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">
-      No AI summaries generated yet.
-    </div>`;
+    list.innerHTML = cachedSummaries.map((s, i) => renderSummaryCard(s, i === 0)).join('') || `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">No AI summaries generated yet.</div>`;
     attachSummaryCardHandlers();
     return;
   }
@@ -896,11 +894,40 @@ document.getElementById('filterSummaryBtn').addEventListener('click', () => {
     list.innerHTML = matches.map((s, i) => renderSummaryCard(s, i === 0)).join('');
     attachSummaryCardHandlers();
   } else {
-    list.innerHTML = `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">
-      No summary found for this date range. Summaries are generated automatically every Friday.
-    </div>`;
+    list.innerHTML = `<div class="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400 text-sm">No summary found for this date range.</div>`;
   }
 });
+
+// Generate Now — admin only
+const generateNowBtn = document.getElementById('generateNowBtn');
+if (generateNowBtn) {
+  generateNowBtn.addEventListener('click', async () => {
+    const from = document.getElementById('summaryFrom').value;
+    const to = document.getElementById('summaryTo').value;
+    if (!from || !to) {
+      showToast('Please select a From and To date before generating.', 'warn');
+      return;
+    }
+    generateNowBtn.disabled = true;
+    generateNowBtn.textContent = 'Generating…';
+    try {
+      const res = await fetch(`/api/summaries/generate?${cq()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate');
+      showToast('Summary generated successfully!', 'success');
+      await loadSummaries();
+    } catch (err) {
+      showToast(`Error: ${escapeHtml(err.message)}`, 'error');
+    } finally {
+      generateNowBtn.disabled = false;
+      generateNowBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Generate Now`;
+    }
+  });
+}
 
 // ---------------- AUTH ----------------
 async function loadMe() {
@@ -921,6 +948,8 @@ async function loadMe() {
     const logsLink = document.getElementById('logsLink');
     logsLink.href = `/logs.html?clientId=${encodeURIComponent(CLIENT_ID)}`;
     logsLink.classList.remove('hidden');
+    const genBtn = document.getElementById('generateNowBtn');
+    if (genBtn) genBtn.classList.remove('hidden');
   }
   if (data.user.role === 'client') {
     const uploadLabel = document.getElementById('uploadLabel');

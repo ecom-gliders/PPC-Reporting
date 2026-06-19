@@ -718,9 +718,19 @@ app.delete('/api/changes', requireClientAccess, requireWriteAccess, (req, res) =
 // ---- Cron: every Saturday at 02:00 PKT (21:00 UTC Friday), summarize the past 7 days for every client ----
 cron.schedule('0 21 * * 5', async () => {
   console.log('[cron] Generating weekly PPC summaries for all clients...');
+  const { getDefaultWeekRange } = require('./summary');
+  const range = getDefaultWeekRange();
   const clients = db.getClients();
   for (const client of clients) {
     try {
+      // Skip if a summary for this exact week already exists (manually generated)
+      const existing = db.getSummaries().find(
+        (s) => s.clientId === client.id && s.from === range.from && s.to === range.to
+      );
+      if (existing) {
+        console.log(`[cron] Skipping "${client.name}" — summary for ${range.from} to ${range.to} already exists.`);
+        continue;
+      }
       const summary = await generateWeeklySummary({ clientId: client.id });
       logSummaryGeneration(client.id, summary, 'Automated (cron)');
       await emailWeeklyReport(client.id, summary);
