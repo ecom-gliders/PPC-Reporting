@@ -715,8 +715,8 @@ app.delete('/api/changes', requireClientAccess, requireWriteAccess, (req, res) =
   res.json({ ok: true });
 });
 
-// ---- Cron: every Saturday at 02:00, summarize the past 7 days for every client ----
-cron.schedule('0 2 * * 6', async () => {
+// ---- Cron: every Saturday at 02:00 PKT (21:00 UTC Friday), summarize the past 7 days for every client ----
+cron.schedule('0 21 * * 5', async () => {
   console.log('[cron] Generating weekly PPC summaries for all clients...');
   const clients = db.getClients();
   for (const client of clients) {
