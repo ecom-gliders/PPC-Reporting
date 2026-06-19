@@ -192,49 +192,82 @@ function simpleMarkdownToHtml(text) {
   return html;
 }
 
-async function buildWhySection(byAsinStatsText, context) {
+function formatDateLabel(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function buildWhySection(clientId, from, to, byAsinStatsText) {
+  const dailyContexts = db.getDailyContexts()
+    .filter((d) => d.clientId === clientId && d.date >= from && d.date <= to)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  if (!dailyContexts.length) return '';
+
   const apiKey = (db.getSettings().openaiApiKey || process.env.OPENAI_API_KEY || '').trim();
-  if (!apiKey || !context || !context.trim()) return '';
 
-  const client = new OpenAI({ apiKey });
-  const completion = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content:
-          `You are an Amazon PPC analyst writing a short closing note for a client report. ` +
-          `You will be given a per-ASIN table of optimization counts for the period, and the analyst's own date-wise notes ` +
-          `explaining why changes were made on each day. Write a brief explanation (2-5 short sentences, as plain paragraphs - ` +
-          `no headings, no bullet points, no markdown formatting) in plain language for the client, summarizing and grounded in the analyst's notes. ` +
-          `Do not invent reasons not supported by the notes. Keep it concise and client-friendly.`,
-      },
-      {
-        role: 'user',
-        content: `Per-ASIN change counts for this period:\n${byAsinStatsText}\n\nAnalyst's date-wise notes on why these changes were made:\n${context.trim()}`,
-      },
-    ],
-    temperature: 0.4,
-  });
+  // Build date-wise context string for AI
+  const contextLines = dailyContexts.map((d) => `${d.date}: ${d.context}`).join('\n');
 
-  const text = completion.choices[0].message.content.trim();
+  let dateWiseHtml = '';
+
+  if (apiKey) {
+    // Ask AI to expand each day's note into a clear client-friendly sentence, date by date
+    const client = new OpenAI({ apiKey });
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content:
+            `You are an Amazon PPC analyst writing a client report. ` +
+            `You will receive date-wise notes from the analyst. For EACH date, write exactly 1-2 clear client-friendly sentences explaining why changes were made that day. ` +
+            `Output ONLY a JSON array in this exact format, one object per date, no extra text:\n` +
+            `[{"date":"YYYY-MM-DD","text":"explanation here"}, ...]\n` +
+            `Use only the dates and reasons provided. Do not invent reasons. Do not merge dates together.`,
+        },
+        {
+          role: 'user',
+          content: `Per-ASIN change counts:\n${byAsinStatsText}\n\nDate-wise analyst notes:\n${contextLines}`,
+        },
+      ],
+      temperature: 0.3,
+    });
+
+    try {
+      const raw = completion.choices[0].message.content.trim().replace(/^```json|^```|```$/gm, '').trim();
+      const parsed = JSON.parse(raw);
+      dateWiseHtml = parsed.map((entry) => `
+        <div class="flex gap-3 py-2.5 border-b border-amber-100 last:border-0">
+          <span class="shrink-0 text-xs font-bold text-amber-700 bg-amber-100 rounded px-2 py-0.5 h-fit mt-0.5 whitespace-nowrap">${escapeHtml(formatDateLabel(entry.date))}</span>
+          <p class="text-sm text-slate-700 leading-relaxed m-0">${escapeHtml(entry.text)}</p>
+        </div>`).join('');
+    } catch (_) {
+      // AI returned unexpected format — fall back to raw context
+      dateWiseHtml = dailyContexts.map((d) => `
+        <div class="flex gap-3 py-2.5 border-b border-amber-100 last:border-0">
+          <span class="shrink-0 text-xs font-bold text-amber-700 bg-amber-100 rounded px-2 py-0.5 h-fit mt-0.5 whitespace-nowrap">${escapeHtml(formatDateLabel(d.date))}</span>
+          <p class="text-sm text-slate-700 leading-relaxed m-0">${escapeHtml(d.context)}</p>
+        </div>`).join('');
+    }
+  } else {
+    // No AI key — show raw context date-wise
+    dateWiseHtml = dailyContexts.map((d) => `
+      <div class="flex gap-3 py-2.5 border-b border-amber-100 last:border-0">
+        <span class="shrink-0 text-xs font-bold text-amber-700 bg-amber-100 rounded px-2 py-0.5 h-fit mt-0.5 whitespace-nowrap">${escapeHtml(formatDateLabel(d.date))}</span>
+        <p class="text-sm text-slate-700 leading-relaxed m-0">${escapeHtml(d.context)}</p>
+      </div>`).join('');
+  }
+
   return `<div class="mt-5 border border-amber-200 bg-amber-50 rounded-md p-4">
-    <div class="flex items-center gap-2 mb-2">
+    <div class="flex items-center gap-2 mb-3">
       <span class="text-amber-500">●</span>
       <h3 class="text-sm font-bold text-slate-800 m-0">Why These Changes Were Made</h3>
     </div>
-    <div class="space-y-1.5">${simpleMarkdownToHtml(text)}</div>
+    <div>${dateWiseHtml}</div>
   </div>`;
 }
 
-function buildDailyContextText(clientId, from, to) {
-  const dailyContexts = db.getDailyContexts().filter((d) => d.clientId === clientId && d.date >= from && d.date <= to);
-  if (!dailyContexts.length) return '';
-  return dailyContexts
-    .sort((a, b) => (a.date < b.date ? -1 : 1))
-    .map((d) => `${d.date}: ${d.context}`)
-    .join('\n');
-}
 
 function buildStatsText(byAsin) {
   let text = '';
@@ -262,11 +295,8 @@ async function generateWeeklySummary({ clientId, from, to, context }) {
   const byAsin = buildAsinStats(changes);
   let summaryText = buildReport(changes, range.from, range.to);
 
-  const dailyContextText = buildDailyContextText(clientId, range.from, range.to);
-  const combinedContext = [dailyContextText, context && context.trim()].filter(Boolean).join('\n\n');
-
   try {
-    const whySection = await buildWhySection(buildStatsText(byAsin), combinedContext);
+    const whySection = await buildWhySection(clientId, range.from, range.to, buildStatsText(byAsin));
     summaryText += whySection;
   } catch (err) {
     summaryText += `<div class="mt-4 pt-3 border-t border-slate-200 text-xs text-red-500">Could not generate "Why These Changes Were Made" section: ${err.message}</div>`;
